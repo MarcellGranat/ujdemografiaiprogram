@@ -1,0 +1,15 @@
+base
+ggplot2
+ggpubr
+tseries
+forecast
+plm
+sf
+tidyverse
+tibble
+tidyr
+readr
+purrr
+dplyr
+stringr
+forcats
