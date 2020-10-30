@@ -2,5 +2,8 @@
 .Rhistory
 .RData
 .Ruserdata
-.tex
-.log
+ujdemografiaiprogram_cache
+ujdemografiaiprogram_files
+ujdemografiaiprogram.log
+ujdemografiaiprogram.Rproj
+ujdemografiaiprogram.tex
