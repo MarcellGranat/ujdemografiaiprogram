@@ -41,6 +41,7 @@ library(forecast)
 library(plm)
 library(sf)
 library(tidyverse)
+library(ggfortify)
 theme_set(theme_bw() + theme(legend.position = "bottom"))
 repmis::source_data(paste0("https://raw.githubusercontent.com/MarcellGranat/",
           "ujdemografiaiprogram/main/ujdemografiaiprogram.RData"))
@@ -415,13 +416,14 @@ panel.tbl %>% setNames(letters[seq_along(.)]) %>% mutate(
 ```
 
 ```{r}
+# Figure x ------------------------------------------------------------------------------
 c.panel %>% dplyr::select(1:2, 4) %>%
   pivot_wider(names_from = year, values_from = tfr) %>%
   set_names(letters[1:ncol(.)]) %>%
   mutate(desc = f - e) %>% dplyr::select(a, desc) %>% hun_map_plot()
 ```
 
-```{r}
+```{r eval = F}
 # Spearman cor between GDPcap and change in GDPcar to change in tfr ---------------------
 c.panel %>% dplyr::select(county, year, tfr, GDPcap) %>%
   pivot_longer(tfr:GDPcap) %>% 
@@ -468,7 +470,6 @@ c.panel.within.extended %>% broom::augment() %>% dplyr::select(.rownames, .fitte
   facet_wrap(~county, ncol = 4) + labs(x = "Év", y = "TTA", color = NULL)
 
 ```
-
 
 
 ```{r fig.cap="A teljes termékenységi arányszám 2018-ban megyénként"}
@@ -579,12 +580,149 @@ oecd_fertility %>% filter(location %in% c("HUN", "POL")) %>% mutate(
 
 ```
 
+```{r}
+irf_plot <- function(model, n.ahead = 10, ci = .95, plot_filter = NULL, n.col = NULL) {
+  irf <- model %>%
+    vars::irf(n.ahead = n.ahead, ci = ci)
+
+  point <- irf %>%
+    .$irf %>%
+    do.call(what = rbind) %>%
+    data.frame()
+
+  point <- point %>%
+    mutate(
+      shock = rep(names(point), each = nrow(point) / length(point)),
+      t = rep(0:(nrow(point) / length(point) - 1), times = length(point))
+    ) %>%
+    pivot_longer(cols = seq_along(point)) %>%
+    transmute(
+      t = t,
+      variable = str_c(shock, " › ", name),
+      point = value
+    )
+
+  lower <- irf %>%
+    .$Lower %>%
+    do.call(what = rbind) %>%
+    data.frame()
+
+  lower <- lower %>%
+    mutate(
+      shock = rep(names(lower), each = nrow(lower) / length(lower)),
+      t = rep(0:(nrow(lower) / length(lower) - 1), times = length(lower))
+    ) %>%
+    pivot_longer(cols = seq_along(lower)) %>%
+    transmute(
+      t = t,
+      variable = str_c(shock, " › ", name),
+      lower = value
+    )
+
+  upper <- irf %>%
+    .$Upper %>%
+    do.call(what = rbind) %>%
+    data.frame()
+
+  upper <- upper %>%
+    mutate(
+      shock = rep(names(upper), each = nrow(upper) / length(upper)),
+      t = rep(0:(nrow(upper) / length(upper) - 1), times = length(upper))
+    ) %>%
+    pivot_longer(cols = seq_along(upper)) %>%
+    transmute(
+      t = t,
+      variable = str_c(shock, " › ", name),
+      upper = value
+    )
+
+  df <- merge(point, lower, by = c("t", "variable")) %>%
+    merge(upper, by = c("t", "variable")) %>%
+    arrange(variable)
+
+  if (!is.null(plot_filter)) {
+    df <- df %>% filter(variable %in% unique(variable)[plot_filter])
+  }
+
+  if (is.null(n.col)) {
+    n.col <- (n_distinct(df$variable)^0.5 %/% 1)
+  }
+
+  df %>% ggplot() +
+    geom_hline(yintercept = 0, linetype = "dotted", size = 1) +
+    geom_ribbon(aes(min = lower, max = upper, x = t, fill = paste(scales::percent(ci), "konfidencia intervallum")), alpha = .2) +
+    geom_line(aes(x = t, y = point, color = "irf"), size = 1.2) +
+    facet_wrap(vars(variable), scales = "free", ncol = n.col) +
+    scale_color_manual(values = c("irf" = "black")) +
+    scale_fill_manual(values = "grey50") +
+    scale_x_continuous(breaks = 0:n.ahead, labels = 0:n.ahead, expand = c(0, 0)) +
+    labs(
+      x = "", y = "", fill = NULL, color = NULL
+    ) +
+    theme(
+      legend.position = "bottom"
+    )
+}
+
+```
+
+
+```{r}
+model <- socioeconomic_indicators %>% merge(LiveBirthAndFertility) %>%
+  dplyr::select(TotalFertility, UnemploymentT, GDPCAP1960) %>%
+  set_names(c("tfr", "unr", "GDPcap")) %>% 
+  mutate_at(1:3 , function(x) {
+    d = ndiffs(x, test = "kpss", type = "level"); if (d > 0) x <- c(rep(NA, d), diff(x))
+    x
+  }) %>%  na.exclude() %>% ts() %>% 
+  vars::VAR(ic = "AIC")
+
+```
+
+```{r eval = F}
+model %>% summary()
+
+```
+
+```{r fig.cap="Impulzus válaszfüggvények"}
+model %>% irf_plot()
+
+```
+
+```{r fig.cap="A TTA variancia dekompozíciója"}
+# Figure x ------------------------------------------------------------------------------
+model %>% vars::fevd() %>% .$tfr %>% data.frame() %>% mutate(
+    t = seq(from = 0, to = nrow(.) - 1)
+  ) %>% gather(key = "variable", value = "value", -t) %>%
+  mutate(variable = factor(case_when(
+    variable == "unr" ~ "Munkanélküliség",
+    variable == "GDPcap" ~ "GDP/fő",
+    T ~ "TTA"
+  ), levels = c("Munkanélküliség", "GDP/fő", "TTA"))) %>% 
+  ggplot() + geom_area(aes(x = t, y = value, fill = variable), color = "black") +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1), expand = c(0, 0)) +
+  scale_fill_grey() +
+  scale_x_continuous(labels = 0:5, breaks = 0:5, expand = c(0, 0), limits = c(0,5)) +
+  labs(x = "Év", y = "TTA varianciájának magyarázata", fill = NULL)
+```
+
+```{r fig.height=3, fig.cap="ARIMA (0,0,1) modellel készített előrejelzés a termékenységi rátára"}
+model <- LiveBirthAndFertility$TotalFertility %>% ts(start = 1960) %>% 
+auto.arima(ic = "aic", stepwise = F) 
+autoplot(forecast::forecast(model, h = 10), ts.connect = T, conf.int.fill = "grey50", predict.colour = "black", predict.linetype = "dashed") +
+  labs(x = "Év", y = "TTA") + scale_x_continuous(expand = c(0, 0))
+```
+
+
 \pagebreak
 \nocite{*}
 \bibliography{ujdemografiaiprogram}
 \bibliographystyle{agsm}
 
 # Függelék
+
+\listoffigures
+\listoftables
 
 ## A tanulmány elkészítéséhez használt R kódok
 
