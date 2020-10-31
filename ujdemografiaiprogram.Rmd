@@ -176,7 +176,7 @@ ggplot(nodes) +
                                    fill = "#CECECE", color = "black",
                                    size = 0.15) +
   geom_curve(aes(x = x, y = y, xend = xend, yend = yend,
-                 color = "Szomszédosnak tekintettek"), size = 2,
+                 color = "Szomszédosnak tekintettek"), size = 1.2,
                data = NeighbourCountry %>% mutate(x = names(NeighbourCountry)) %>%
                pivot_longer(-x, names_to = "y") %>% 
                na.exclude() %>% dplyr::select(-value) %>% 
@@ -185,7 +185,7 @@ ggplot(nodes) +
                merge(nodes, by.x = "key", by.y = "name") %>% 
                set_names(c("name", "key", "x", "y", "xend", "yend")) %>%
                filter(name < key), curvature = 0.33,
-               alpha = 0.5) +
+               alpha = 0.7) +
   geom_text(aes(x = lon, y = lat, label = name),
             hjust = 0.7, nudge_x = 0, nudge_y = 0,
             size = 2, color = "black", fontface = "bold") +
@@ -304,7 +304,10 @@ terms = list(
   c("GDPcap", "unr"),
   c("GDPcap", "unr", "unr2", "GDPcap2", "unr_l", "unr_l2", "GDPcap_l",
     "GDPcap_l2", "unr_ll", "unr_ll2", "GDPcap_ll", "GDPcap_ll2", "unr_lll", "unr_lll2",
-    "GDPcap_lll", "GDPcap_lll2"))
+    "GDPcap_lll", "GDPcap_lll2"),
+  c("GDPcap", "GDPcap2", "GDPcap_l",
+    "GDPcap_l2", "GDPcap_ll", "GDPcap_ll2")
+  )
 panel.tbl <- data.frame(term = names(c.panel.extended)[-c(1,2,4)]) %>% arrange(term)
 pooltest.p <- vector()
 phtest.p <- vector()
@@ -351,10 +354,101 @@ panel.tbl %>% setNames(letters[seq_along(.)]) %>% mutate(
   knitr::kable(format = "latex", caption = "Panel", row.names = F,
   align = c("l", "l", rep("c", ncol(.) - 2)),
   col.names = c("", "", rep(c("Koefficiens", "P-érték"), (ncol(.) - 2)/2))) %>% 
-  kableExtra::add_header_above(c("Változó" = 2, "I" = 2, "II" = 2)) %>% 
+  kableExtra::add_header_above(c("Változó" = 2, "I" = 2, "II" = 2, "III" = 2)) %>% 
   kableExtra::collapse_rows(columns = 1, valign = "top")
 
 ```
+
+```{r}
+terms = list(
+  c("GDPcap_l", "GDPcap_l2", "GDPcap_ll")
+  )
+panel.tbl <- data.frame(term = names(c.panel.extended)[-c(1,2,4)]) %>% arrange(term)
+pooltest.p <- vector()
+phtest.p <- vector()
+adj.r <- vector()
+
+for (i in 1:length(terms)) {
+
+formula = as.expression(paste("formula = tfr ~", paste(terms[[i]], collapse = " + ")))
+
+c.panel.pooling.extended <- plm(eval(formula), data = c.panel.extended, model = "pooling")
+c.panel.within.extended <- plm(eval(formula), data = c.panel.extended, model = "within")
+c.panel.random.extended <- plm(eval(formula), data = c.panel.extended, model = "random")
+
+panel.tbl <- cbind(panel.tbl, c.panel.within.extended %>% broom::tidy()  %>% dplyr::select(term, estimate, p.value)  %>% 
+    merge(panel.tbl, all = T) %>% arrange(term) %>% dplyr::select(estimate, p.value) %>% mutate(
+      p.value = scales::percent(p.value, accuracy = .01, decimal.mark = ",")
+    ) %>% set_names(c("változó", "p-érték")))
+
+pooltest.p[i * 2] <- pooltest(c.panel.pooling.extended, c.panel.within.extended)$p.value
+phtest.p[i * 2] <- phtest(c.panel.within.extended, c.panel.random.extended)$p.value
+adj.r[i * 2] <- c.panel.within.extended %>% plm::r.squared(dfcor = T)
+}
+
+panel.s.tbl <- data.frame(' ' = c('Chow-teszt', scales::percent(pooltest.p, accuracy = .01, decimal.mark = ",")),
+           ' ' = c('Hausman-teszt', scales::percent(phtest.p, accuracy = .01, decimal.mark = ",")),
+           ' ' = c('Korrigált R^2', scales::percent(adj.r, accuracy = .01, decimal.mark = ","))
+           ) %>% t() %>% data.frame() %>% set_names(letters[seq_along(.)])
+
+panel.tbl %>% setNames(letters[seq_along(.)]) %>% mutate(
+  a = str_replace(a, "2", "^2"),
+  a = str_replace(a, "GDPcap", "GDP/fő"),
+  a = str_replace(a, "unr", "Munkanélküliségi ráta"),
+) %>% arrange(a) %>% mutate(
+  a = str_replace(a, "_llll", " (l=4)"),
+  a = str_replace(a, "_lll", " (l=3)"),
+  a = str_replace(a, "_ll", " (l=2)"),
+  a = str_replace(a, "_l", " (l=1)")) %>%
+  rbind(panel.s.tbl) %>% mutate(type = c(rep("Paraméter" ,nrow(.) - 3), rep("Jellemző", 3))) %>% 
+  dplyr::select(type, letters[seq(ncol(.) - 1)]) %>% 
+  mutate_at(seq(from = 3, to = ncol(.) - 1, by = 2), 
+  function(x) if_else(is.na(x), "", 
+  as.character(format(as.numeric(x), digits = 3, nsmall = 3, decimal.mark = ",")))) %>%
+  mutate_all(function(x) ifelse(is.na(x), "", x)) %>% 
+  knitr::kable(format = "latex", booktabs = F, row.names = F,
+  align = c("l", "l", rep("c", ncol(.) - 2)),
+  col.names = c("", "", rep(c("Koefficiens", "P-érték"), (ncol(.) - 2)/2))) %>% 
+  kableExtra::add_header_above(c("Változó" = 2, "IV" = 2)) %>% 
+  kableExtra::collapse_rows(columns = 1, valign = "top")
+
+```
+
+```{r}
+c.panel %>% dplyr::select(1:2, 4) %>%
+  pivot_wider(names_from = year, values_from = tfr) %>%
+  set_names(letters[1:ncol(.)]) %>%
+  mutate(desc = f - e) %>% dplyr::select(a, desc) %>% hun_map_plot()
+```
+
+```{r}
+c.panel %>% dplyr::select(county, year, tfr, GDPcap) %>%
+  pivot_longer(tfr:GDPcap) %>% 
+  pivot_wider(names_from = year, values_from = value) %>%
+  set_names(letters[1:ncol(.)]) %>%
+  transmute(county = a, var = b, change = g - f, value = g) %>% 
+  pivot_wider(change:value, names_from = var)
+  mutate(desc = f - e) %>% dplyr::select(a, desc) %>% 
+  merge(
+    c.panel %>% filter(year == 2008), by.x = "a", by.y = "county"
+  ) %>% dplyr::select(desc, GDPcap) %>% 
+  cor(method = "spearman")
+```
+
+
+```{r}
+ggplot(data.frame(x = c(0, 10000)), aes(x = x)) +
+  stat_function(fun = function(x) x*c.panel.within.extended$coefficients["GDPcap_l"] + x^2*c.panel.within.extended$coefficients["GDPcap_l2"], size = 2) + 
+  geom_vline(xintercept = c.panel %>% filter(year == 2018) %>% pull(GDPcap) %>% .[-1], linetype = "dashed") +
+  geom_vline(aes(linetype = "Magyar megyék egy főre eső GDP értékei", xintercept = (c.panel %>% filter(year == 2018) %>% pull(GDPcap) %>% .[1]))) +
+  scale_linetype_manual(values = "dashed") +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 2)) +
+  labs(x = "GDP/fő (ezer Ft-ban)", y = "Egyedi konstanson felüli TTA érték", linetype = NULL)
+
+
+```
+
 
 ```{r fig.cap="TTA becslése megyénként a fix modellel", fig.height=7}
 # Figure 4 ------------------------------------------------------------------------------
@@ -445,7 +539,7 @@ panel.tbl %>% setNames(letters[seq_along(.)]) %>% mutate(
   mutate_at(seq(from = 3, to = ncol(.) - 1, by = 2), 
   function(x) if_else(is.na(x), "", 
   as.character(format(as.numeric(x), digits = 3, nsmall = 3, decimal.mark = ",")))) %>%
-  mutate_all(function(x) ifelse(is.na(x), "", x)) #%>% 
+  mutate_all(function(x) ifelse(is.na(x), "", x)) %>% 
   knitr::kable(format = "latex", caption = "Panel", row.names = F,
   align = c("l", "l", rep("c", ncol(.) - 2)),
   col.names = c("", "", rep(c("Koefficiens", "P-érték"), (ncol(.) - 2)/2))) %>% 
