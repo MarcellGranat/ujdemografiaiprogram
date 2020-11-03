@@ -1,39 +1,15 @@
 ---
-title: "A születésszám és a gazdaság kapcsolata"
-subtitle: 'Új demográfiai program'
-author:
-  - Granát Marcell^[Közgazdasági elemző, I. évfolyam]
-date: \today
-output: 
-  pdf_document: 
-    fig_caption: yes
-    keep_tex: yes
-    latex_engine: xelatex
-    number_sections: yes
-    toc: yes
-editor_options: 
-  chunk_output_type: console
-header-includes:
-- \usepackage{fancyhdr}
-- \usepackage[hungarian]{babel}
-- \usepackage{natbib}
-- \pagestyle{fancy}
-- \fancyhf{}
-- \fancyhead[LE,RO]{Marcell Granát}
-- \fancyhead[RE,LO]{\leftmark}
-- \fancyfoot[C]{\thepage}
-- \usepackage{fontspec}
-- \setmainfont{Calibri}
-- \usepackage{lscape}
-- \usepackage{pdfpages}
+title: "A termékenységi ráta kapcsolata az egy főre eső bruttó kibocsátással és a munkanélküliséggel"
+author: Granát Marcell
+date: 2020-10-01
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = F, comment = "", warning = T, message = F, cache = T, dev = "png", error = T)
+knitr::opts_chunk$set(echo = T, comment = "", warning = F, message = F, cache = T, error = T)
 ```
 
-```{r include=FALSE}
-# packages and setup --------------------------------------------------------------------
+```{r}
 library(ggpubr)
 library(tseries)
 library(forecast)
@@ -42,172 +18,120 @@ library(sf)
 library(tidyverse)
 library(ggfortify)
 theme_set(theme_bw() + theme(legend.position = "bottom"))
-repmis::source_data(paste0("https://raw.githubusercontent.com/MarcellGranat/",
-          "ujdemografiaiprogram/main/ujdemografiaiprogram.RData"))
+repmis::source_data("https://raw.githubusercontent.com/MarcellGranat/ujdemografiaiprogram/main/ujdemografiaiprogram.RData")
 ```
 
-\thispagestyle{empty}
+# A magyar születésszám az elmúlt 60 évben
 
-**ABSZTRAKT: **
-A születendő gyermekek száma olyan téma, amely számos politikai vita központjába kerül napjainkban. A vita alapját adja, hogy egyik oldalon a Föld eltartó képességére hivatkozva, vannak, akik azt tartják helyesnek, ha a népesség csökkentését sürgetjük, míg mások számos indokot állítanak fel ezzel szemben. A bruttó nemzeti kibocsátás jelentős része származhat pusztán a demográfiai növekedésből. Ha a kibocsátás növekedése főként a lélekszám növekedéséből származik, abban az esetben ez nem vezet az életszínvonal emelkedéséhez, az egy főre jutó jövedelem nem nő a népesség számának növekedésével, azonban globális politikai súlyként szolgál a nagyobb kibocsátás. Fontos indok lehet mögötte a számos országban működő felosztó-kirovó nyugdíjrendszer fenntarthatósága. Az elsőként említett állásponton lévő országra kiváló példa Kína, aki az egy gyermek politika bevezetésével a népességének csökkentését kívánja kiváltani. A szemben álló oldalra sorolható akár Magyarország is. Nem is olyan régen jelent meg a hazai médiában, hogy a magyar miniszterelnök “alkut kíván kötni a magyar nőkkel”, majd bejelentette a négy gyermekes családok adókedvezményét. A natalizmus1 visszatérése nem újdonság, számos más európai ország üdvözli2, annak európai történelme igen sötét képeket fest 21. századi szemmel (The Economist, 2020, b). Bármely oldalon is kíván egy ország vezetése helyet foglalni, az ...
-
-\pagebreak
-\setcounter{page}{1}
-
-# Bevezetés
-
-A születendő gyermekek száma olyan téma, amely számos politikai vita központjába kerül napjainkban. A vita alapját adja, hogy egyik oldalon a Föld eltartó képességére hivatkozva, vannak, akik azt tartják helyesnek, ha a népesség csökkentését sürgetjük, míg mások számos indokot állítanak fel ezzel szemben. A bruttó nemzeti kibocsátás jelentős része származhat pusztán a demográfiai növekedésből. Ha a kibocsátás növekedése főként a lélekszám növekedéséből származik, abban az esetben ez nem vezet az életszínvonal emelkedéséhez, az egy főre jutó jövedelem nem nő a népesség számának növekedésével, azonban globális politikai súlyként szolgál a nagyobb kibocsátás. Fontos indok lehet mögötte a számos országban működő felosztó-kirovó nyugdíjrendszer fenntarthatósága. Az elsőként említett állásponton lévő országra kiváló példa Kína, aki az egy gyermek politika bevezetésével a népességének csökkentését kívánja kiváltani. A szemben álló oldalra sorolható akár Magyarország is. Nem is olyan régen jelent meg a hazai médiában, hogy a magyar miniszterelnök “alkut kíván kötni a magyar nőkkel”, majd bejelentette a négy gyermekes családok adókedvezményét. A natalizmus1 visszatérése nem újdonság, számos más európai ország üdvözli2, annak európai történelme igen sötét képeket fest 21. századi szemmel (The Economist, 2020, b). Bármely oldalon is kíván egy ország vezetése helyet foglalni, az aktuális demográfiai folyamatokról szóló előrejelzések, illetőleg a folyamatot befolyásoló lehetséges eszközök, és a natalizmus gazdasági-társadalmi következményeinek ismerete elengedhetetlen.
-
-Ezen tanulmány során elemzést végzek a Magyarországot jellemző születési mutatók elmúlt félévszázad során végbemenő változásain, illetőlegek a témában ismert szakirodalom alapján relevánsnak tekinthető más gazdaság és társadalmi indikátorokkal való kapcsolatán. A dolgozat során az idősorelemzés általános eszközeit alkalmazom, köztük az Box-Jenkins eljárást, vektor-autoregresszív modelleket, illetőlegesen Granger-okság és kointegráció vizsgálatát végzem el. A fentebb felsorolt eszközök segítségével előrejelzést készítek a magyar termékenységi ráta várható alakulásával kapcsolatosan. Az oksági vizsgálatok során kapott eredményeknek az általános közgazdasági elméletekkel való megegyezésüknek, illetőlegesen hitelességüknek való alátámasztásuk érdekében további vizsgálódásokat végzek. Az általam végzett számítások R kódjai az alábbi weboldalon érhetőek el: https://github.com/MarcellGranat/fertility/blob/master/TDK-2020-fertility.R
-
-```{r fig.cap="Magyar születési mutatók bázisindexe (1960 = 100%)", fig.height=3.5}
-# Figure 1 ------------------------------------------------------------------------------
-LiveBirthAndFertility %>% 
-  mutate_at(-1, function(x) x/x[1]) %>% 
-  pivot_longer(-1) %>% mutate(
+```{r fig.height=3.5}
+LiveBirthAndFertility %>%
+  mutate_at(-1, function(x) x / x[1]) %>%
+  pivot_longer(-1) %>%
+  mutate(
     name = factor(case_when(
       name == "LiveBirthTotal" ~ "Születésszám",
       name == "LiveBirthTo1000" ~ "Ezer főre eső születésszám",
       T ~ "Teljes termékenységi arányszám"
     ), levels = c("Teljes termékenységi arányszám", "Ezer főre eső születésszám", "Születésszám"))
-  ) %>% ggplot() + 
-  geom_hline(aes(yintercept = 2.1/LiveBirthAndFertility$TotalFertility[1],
-                 linetype = "Reprodukciót biztosító TTA érték"), color = "black") + 
-  geom_line(aes(x = Year, y = value, color = name), size = 1.3) + 
-  scale_color_grey() + 
+  ) %>%
+  ggplot() +
+  geom_hline(aes(
+    yintercept = 2.1 / LiveBirthAndFertility$TotalFertility[1],
+    linetype = "Reprodukciót biztosító TTA érték"
+  ), color = "black", size = 1) +
+  geom_line(aes(x = Year, y = value, color = name), size = 2) +
+  scale_color_grey() +
   scale_linetype_manual(values = c("Reprodukciót biztosító TTA érték" = "dotted")) +
-  scale_x_continuous(expand = c(0,0)) + 
-  scale_y_continuous(labels = scales::percent) + 
-  labs(x = "Év", y = "Százalék (1960 = 100%)", color = NULL, linetype = NULL) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(x = "Év", y = "Százalék (1960 = 100%)", color = NULL, linetype = NULL, title = "Születési mutatók bázisindexe (1960=100%)") +
   theme(legend.box = "vertical")
-
 ```
 
-```{r fig.cap="A születésszám és házasság kötések ezer főre eső számának bázisindexe", fig.height=3}
-# Figure 2 ------------------------------------------------------------------------------
-merge(socioeconomic_indicators[,c("Year", "Marriage")],
-      LiveBirthAndFertility[,c("Year","LiveBirthTo1000")]
-) %>%
-  mutate_at(-1, function(x) x/x[1]) %>% pivot_longer(-1) %>% 
-  mutate(name = ifelse(name == "Marriage", "Házasságkötés", "Születésszám")) %>% 
-  ggplot() +  geom_line(aes(x = Year, y = value, color = name), size = 1.7) + 
-  scale_color_grey() + scale_x_continuous(expand = c(0,0)) + 
-  scale_y_continuous(labels = scales::percent) + 
-  labs(x = "Év", y = "Százalék (1960 = 100%)", color = NULL)
+# Kointegrációs teszt az OECD által közölt termékenységi arányszámokon
 
+```{r fig.height=6}
+oecd_fertility %>%
+  filter(location %in% c("HUN", "POL")) %>%
+  mutate(
+    tfr_d = c(NA, diff(tfr)),
+    tfr_d = ifelse(time == 1960, NA, tfr_d)
+  ) %>%
+  pivot_longer(-c(1, 2)) %>%
+  rbind(
+    data.frame(location = "HUN", time = 1960:2018, name = "res", value = oecd_fertility %>%
+      filter(location %in% c("HUN", "POL")) %>%
+      pivot_wider(names_from = location, values_from = tfr) %>%
+      lm(formula = HUN ~ POL) %>% .$residuals)
+  ) %>%
+  mutate(name = factor(name, levels = c("tfr", "tfr_d", "res"))) %>%
+  ggplot(aes(x = time, y = value, color = location)) +
+  geom_line(size = 1.5) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_color_grey() +
+  facet_wrap(~name,
+    ncol = 1, scales = "free",
+    labeller = as_labeller(c(
+      "tfr" = "Transzformálatlan idősorok",
+      "tfr_d" = "Differenciázott idősorok",
+      "res" = "OLS maradéktagja"
+    ))
+  ) +
+  labs(x = "Év", y = NULL, color = NULL, title = "A magyar és lengyel TTA idősorok között fennálló kointegráció")
 ```
 
 ```{r}
-# OECD data import ----------------------------------------------------------------------
-oecd_fertility <- # Total Fertility Rate (children/woman) from OECD webpage
-  read.csv(paste0(
-    "https://stats.oecd.org/sdmx-json/data/DP_LIVE/.FERTILITY.TOT.CHD_WOMAN.A/OECD?",
-    "contentType=csv&detail=code&separator=comma&csv-lang=en&startPeriod=",
-    "1960&endPeriod=2019")) %>%
-  dplyr::select(1,6,7) %>% set_names(c("location", "time", "tfr"))
-
-oecd_GDPcap <- # GDP/cap (dollar) from OECD webpage
-  read.csv(paste0(
-    "https://stats.oecd.org/sdmx-json/data/DP_LIVE/.GDP.TOT.USD_CAP.A/OECD?contentType",
-    "=csv&detail=code&separator=comma&csv-lang=en&startPeriod=1960&endPeriod=2019")) %>%
-  dplyr::select(1,6,7) %>% set_names(c("location", "time", "GDPcap"))
-
-oecd_unr <- # unemployment rate from OECD webpage
-  read.csv(paste0(
-"https://stats.oecd.org/sdmx-json/data/DP_LIVE/.HUR.TOT.PC_LF.A/OECD?contentType=csv&",
-  "detail=code&separator=comma&csv-lang=en&startPeriod=1960&endPeriod=2019")) %>%
-  dplyr::select(1,6,7) %>% set_names(c("location", "time", "unr"))
-
-```
-
-```{r fig.height=3.5, eval=F}
-# Figure x ------------------------------------------------------------------------------
-v <- vector()
-for (i in 1960:2019) {
-  v[i - 1959] <- merge(oecd_fertility,oecd_GDPcap) %>%
-    filter(time == i & location != "OAVG" & location != "EU") %>%
-    dplyr::select(tfr, GDPcap) %>% cor() %>% .[1,2]
-}
-
-ggplot(data = data.frame(time = 1960:2019, y = v)) +
-  geom_hline(yintercept = 0) + 
-  geom_col(aes(x = time, y = y), fill = "grey70", color = "black") +
-  geom_line(aes(x = time, y = 
-                  merge(oecd_fertility,oecd_GDPcap) %>%
-                  filter(location != "OAVG" & location != "EU") %>%
-                  group_by(time) %>% summarize(n = n()) %>% mutate(n = n/max(n)) %>%
-                  .$n, color = "Adatok aránya (52 országról elérhető adat = 1)")) + 
-  #labs(y = "Lineáris korrelációs együttható", x = "Év", color = NULL) +
-  scale_y_continuous(limits = c(-1,1), expand = c(0,0)) +
-  scale_color_grey()
-
-```
-
-```{r "A termékenységi ráta és a GDP/fő kapcsolata globálisan"}
-# Figure x ------------------------------------------------------------------------------
-df <- merge(oecd_fertility, oecd_GDPcap) %>% mutate(
-  year = case_when(
-    time == 1970 ~ "1970",
-    time == 2019 ~ "2019",
-    T ~ "other"
-  ))
-
-ggplot(data = df, mapping = aes(GDPcap, tfr)) +
-  geom_point(color = "grey70", alpha = .9, size = 0.5) +
-  geom_smooth(data = filter(df, year != "other"), aes(color = year), size = 2, se = F) +
-  geom_smooth(data = df, mapping = aes(GDPcap, tfr, color = "Összes év"),
-              size = 2, se = F, method = "loess") + 
-  scale_colour_manual(values = c("grey60", "grey50", "black")) +
-  labs(x = "GDP/fő (USA dollár)", y = "Termékenységi ráta",
-       color = "Pontokra illesztett trend (loess eljárás)")
-
-```
-
-
-```{r fig.cap = "Számítások során egymás szomszédjának tekintett országok hálója"}
-# Figure x ------------------------------------------------------------------------------
-nodes <- CountryData %>% filter(code3 %in% names(NeighbourCountry)) %>%
-  dplyr::select(code3, longitude, latitude) %>% 
-  set_names(c('name', 'lon', 'lat'))
+nodes <- CountryData %>%
+  filter(code3 %in% names(NeighbourCountry)) %>%
+  dplyr::select(code3, longitude, latitude) %>%
+  set_names(c("name", "lon", "lat"))
 
 ggplot(nodes) +
   geom_polygon(aes(x = long, y = lat, group = group),
-                                   data = map_data('world'),
-                                   fill = "#CECECE", color = "black",
-                                   size = 0.15) +
-  geom_curve(aes(x = x, y = y, xend = xend, yend = yend,
-                 color = "Szomszédosnak tekintettek"), size = 1.2,
-               data = NeighbourCountry %>% mutate(x = names(NeighbourCountry)) %>%
-               pivot_longer(-x, names_to = "y") %>% 
-               na.exclude() %>% dplyr::select(-value) %>% 
-               merge(nodes, by.x = "x", by.y = "name") %>% 
-               set_names(c("name", "key", "x", "y")) %>% 
-               merge(nodes, by.x = "key", by.y = "name") %>% 
-               set_names(c("name", "key", "x", "y", "xend", "yend")) %>%
-               filter(name < key), curvature = 0.33,
-               alpha = 0.7) +
+    data = map_data("world"),
+    fill = "#CECECE", color = "black",
+    size = 0.15
+  ) +
+  geom_curve(aes(
+    x = x, y = y, xend = xend, yend = yend,
+    color = "Szomszédosnak tekintettek"
+  ),
+  size = 1.2,
+  data = NeighbourCountry %>% mutate(x = names(NeighbourCountry)) %>%
+    pivot_longer(-x, names_to = "y") %>%
+    na.exclude() %>% dplyr::select(-value) %>%
+    merge(nodes, by.x = "x", by.y = "name") %>%
+    set_names(c("name", "key", "x", "y")) %>%
+    merge(nodes, by.x = "key", by.y = "name") %>%
+    set_names(c("name", "key", "x", "y", "xend", "yend")) %>%
+    filter(name < key), curvature = 0.33,
+  alpha = 0.7
+  ) +
   geom_text(aes(x = lon, y = lat, label = name),
-            hjust = 0.7, nudge_x = 0, nudge_y = 0,
-            size = 2, color = "black", fontface = "bold") +
-  labs(color = "") +
-  coord_fixed(xlim = c(-150, 180), ylim = c(-55, 80)) + 
-  scale_color_manual(values = "grey20") + theme_void() +
+    hjust = 0.7, nudge_x = 0, nudge_y = 0,
+    size = 2, color = "black", fontface = "bold"
+  ) +
+  labs(color = "", title = "Számítások során egymás szomszédjának tekintett országok hálója") +
+  coord_fixed(xlim = c(-150, 180), ylim = c(-55, 80)) +
+  scale_color_manual(values = "grey20") +
+  theme_void() +
   theme(legend.position = "bottom")
-
 ```
 
-
 ```{r}
-# Neighbourhood effect ----------------------------------------------------------------
-df <- NeighbourCountry %>% mutate(x = names(NeighbourCountry)) %>%
-  pivot_longer(-x, names_to = "y", values_to = "neighbour") %>% mutate(
+df <- NeighbourCountry %>%
+  mutate(x = names(NeighbourCountry)) %>%
+  pivot_longer(-x, names_to = "y", values_to = "neighbour") %>%
+  mutate(
     neighbour = ifelse(is.na(neighbour), "Nem határosak", "Határosak"),
     neighbour = ifelse(x == y, NA, neighbour)
-  ) %>% merge(
+  ) %>%
+  merge(
     oecd_fertility %>% group_by(location) %>%
       summarise(d = ndiffs(tfr, test = "kpss", type = "level", alpha = .05)) %>%
       set_names("y", "dy")
-  ) %>% merge(
+  ) %>%
+  merge(
     oecd_fertility %>% group_by(location) %>%
       summarise(d = ndiffs(tfr, test = "kpss", type = "level", alpha = .05)) %>%
       set_names("x", "dx")
@@ -218,371 +142,62 @@ for (i in 1:nrow(df)) {
   if (df$dx[i] == df$dy[i] & df$x[i] != df$y[i]) {
     res <- oecd_fertility %>%
       pivot_wider(names_from = "location", values_from = "tfr") %>%
-      dplyr::select(df$x[i],  df$y[i]) %>% set_names(c("x", "y")) %>%
-      na.exclude() %>% lm(formula = y ~ x) %>% .$residuals
-    
-    if (ndiffs(res , test = "kpss", type = "level", alpha = .05) < df$dx[i]) {
-      v[i] <-  "Kointegráltak"  
+      dplyr::select(df$x[i], df$y[i]) %>%
+      set_names(c("x", "y")) %>%
+      na.exclude() %>%
+      lm(formula = y ~ x) %>%
+      .$residuals
+
+    if (ndiffs(res, test = "kpss", type = "level", alpha = .05) < df$dx[i]) {
+      v[i] <- "Kointegráltak"
     } else {
-      v[i] <-  "Nem kointegráltak"
+      v[i] <- "Nem kointegráltak"
     }
   } else {
-    v[i] <-  "A teszt nem elvégezhető"  
+    v[i] <- "A teszt nem elvégezhető"
   }
 }
 
 df$coint <- v
 
 df <- merge(df, oecd_fertility %>%
-              pivot_wider(names_from = "location", values_from = "tfr") %>%
-              dplyr::select(-1) %>% cor(use = "pairwise.complete.obs") %>%
-              data.frame() %>% rownames_to_column(var = "x") %>% 
-              pivot_longer(-1, names_to = "y", values_to = "cor"))
-
+  pivot_wider(names_from = "location", values_from = "tfr") %>%
+  dplyr::select(-1) %>% cor(use = "pairwise.complete.obs") %>%
+  data.frame() %>% rownames_to_column(var = "x") %>%
+  pivot_longer(-1, names_to = "y", values_to = "cor"))
 ```
 
-```{r eval = F}
-df %>% group_by(neighbour) %>% summarise(mean(cor)) # mean of correlation
-
-```
-
-```{r fig.height=6.5, fig.cap="Kointegrációs tesztek eredményei"}
-# Figure 3 ------------------------------------------------------------------------------
-ggplot(data = df) + geom_tile(aes(x = x, y = y, fill = coint), color = "black") + 
-  labs(x = "", y = "", fill = "") +
+```{r fig.height=5}
+ggplot(data = df) +
+  geom_tile(aes(x = x, y = y, fill = coint), color = "black") +
+  labs(x = "", y = "", fill = "", title = "Kointegrációs tesztek eredményei") +
   scale_fill_manual(values = c("white", "black", "grey")) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.45))
-
 ```
 
 ```{r}
-df %>% group_by(neighbour, coint) %>% summarise(n = n()) %>% filter(!is.na(neighbour)) %>% 
+df %>%
+  group_by(neighbour, coint) %>%
+  summarise(n = n()) %>%
+  filter(!is.na(neighbour)) %>%
   pivot_wider(names_from = neighbour, values_from = n) %>%
-  mutate_at(-1, function(x) scales::percent(x/sum(x), decimal.mark = ",")) %>%
-  .[c(1,3,2),] %>% 
-  knitr::kable(col.names = c("", "Határosak", "Nem határosak"), align = c("l", "c", "c"),
-    caption = 
-    "Tesztek eredményeinek arányai egymással határos és nem határos országok esetében")
-
-```
-
-```{r}
-# Hungarian map draw function -----------------------------------------------------------
-hun_map_plot <- function(df, na.value = "white", low = "white", high = "black") {
-  hunsf %>% merge(set_names(df, c("NAME", "value"))) %>%  ggplot() +
-    geom_sf(aes(fill = value)) + ggthemes::theme_map() + 
-    scale_fill_gradient(na.value = na.value, low = low, high = high,
-        guide = guide_colorbar(frame.colour = "black", ticks.colour = "black")) }
-
-```
-
-
-```{r}
-c.panel.extended <- c.panel %>% 
-  mutate(
-    unr2 = unr^2,
-    GDPcap2 = GDPcap^2,
-    unr_l = ifelse(year == 2005, NA, dplyr::lag(unr)),
-    unr_l2 = ifelse(year == 2005, NA,dplyr::lag(unr2)),
-    GDPcap_l = ifelse(year == 2005, NA,dplyr::lag(GDPcap)),
-    GDPcap_l2 = ifelse(year == 2005, NA,dplyr::lag(GDPcap2)),
-    unr_ll = ifelse(year == 2005, NA, dplyr::lag(unr_l)),
-    unr_ll2 = ifelse(year == 2005, NA,dplyr::lag(unr_l2)),
-    GDPcap_ll = ifelse(year == 2005, NA,dplyr::lag(GDPcap_l)),
-    GDPcap_ll2 = ifelse(year == 2005, NA,dplyr::lag(GDPcap_l2)),
-    unr_lll = ifelse(year == 2005, NA, dplyr::lag(unr_ll)),
-    unr_lll2 = ifelse(year == 2005, NA,dplyr::lag(unr_ll2)),
-    GDPcap_lll = ifelse(year == 2005, NA,dplyr::lag(GDPcap_ll)),
-    GDPcap_lll2 = ifelse(year == 2005, NA,dplyr::lag(GDPcap_ll2)),
-    unr_llll = ifelse(year == 2005, NA, dplyr::lag(unr_lll)),
-    unr_llll2 = ifelse(year == 2005, NA,dplyr::lag(unr_lll2)),
-    GDPcap_llll = ifelse(year == 2005, NA,dplyr::lag(GDPcap_lll)),
-    GDPcap_llll2 = ifelse(year == 2005, NA,dplyr::lag(GDPcap_lll2))
+  mutate_at(-1, function(x) scales::percent(x / sum(x), decimal.mark = ",")) %>%
+  .[c(1, 3, 2), ] %>%
+  knitr::kable(
+    col.names = c("", "Határosak", "Nem határosak"), align = c("l", "c", "c"),
+    caption =
+      "Tesztek eredményeinek arányai egymással határos és nem határos országok esetében"
   )
-
-terms = list(
-  c("GDPcap", "unr"),
-  c("GDPcap", "unr", "unr2", "GDPcap2", "unr_l", "unr_l2", "GDPcap_l",
-    "GDPcap_l2", "unr_ll", "unr_ll2", "GDPcap_ll", "GDPcap_ll2", "unr_lll", "unr_lll2",
-    "GDPcap_lll", "GDPcap_lll2"),
-  c("GDPcap", "GDPcap2", "GDPcap_l",
-    "GDPcap_l2", "GDPcap_ll", "GDPcap_ll2")
-  )
-panel.tbl <- data.frame(term = names(c.panel.extended)[-c(1,2,4)]) %>% arrange(term)
-pooltest.p <- vector()
-phtest.p <- vector()
-adj.r <- vector()
-
-for (i in 1:length(terms)) {
-
-formula = as.expression(paste("formula = tfr ~", paste(terms[[i]], collapse = " + ")))
-
-c.panel.pooling.extended <- plm(eval(formula), data = c.panel.extended, model = "pooling")
-c.panel.within.extended <- plm(eval(formula), data = c.panel.extended, model = "within")
-c.panel.random.extended <- plm(eval(formula), data = c.panel.extended, model = "random")
-
-panel.tbl <- cbind(panel.tbl, c.panel.within.extended %>% broom::tidy()  %>% dplyr::select(term, estimate, p.value)  %>% 
-    merge(panel.tbl, all = T) %>% arrange(term) %>% dplyr::select(estimate, p.value) %>% mutate(
-      p.value = scales::percent(p.value, accuracy = .01, decimal.mark = ",")
-    ) %>% set_names(c("változó", "p-érték")))
-
-pooltest.p[i * 2] <- pooltest(c.panel.pooling.extended, c.panel.within.extended)$p.value
-phtest.p[i * 2] <- phtest(c.panel.within.extended, c.panel.random.extended)$p.value
-adj.r[i * 2] <- c.panel.within.extended %>% plm::r.squared(dfcor = T)
-}
-
-panel.s.tbl <- data.frame(' ' = c('Chow-teszt', scales::percent(pooltest.p, accuracy = .01, decimal.mark = ",")),
-           ' ' = c('Hausman-teszt', scales::percent(phtest.p, accuracy = .01, decimal.mark = ",")),
-           ' ' = c('Korrigált R^2', scales::percent(adj.r, accuracy = .01, decimal.mark = ","))
-           ) %>% t() %>% data.frame() %>% set_names(letters[seq_along(.)])
-
-panel.tbl %>% setNames(letters[seq_along(.)]) %>% mutate(
-  a = str_replace(a, "2", "^2"),
-  a = str_replace(a, "GDPcap", "GDP/fő"),
-  a = str_replace(a, "unr", "Munkanélküliségi ráta"),
-) %>% arrange(a) %>% mutate(
-  a = str_replace(a, "_llll", " (l=4)"),
-  a = str_replace(a, "_lll", " (l=3)"),
-  a = str_replace(a, "_ll", " (l=2)"),
-  a = str_replace(a, "_l", " (l=1)")) %>%
-  rbind(panel.s.tbl) %>% mutate(type = c(rep("Paraméter" ,nrow(.) - 3), rep("Jellemző", 3))) %>% 
-  dplyr::select(type, letters[seq(ncol(.) - 1)]) %>% 
-  mutate_at(seq(from = 3, to = ncol(.) - 1, by = 2), 
-  function(x) if_else(is.na(x), "", 
-  as.character(format(as.numeric(x), digits = 3, nsmall = 3, decimal.mark = ",")))) %>%
-  mutate_all(function(x) ifelse(is.na(x), "", x)) %>% 
-  knitr::kable(format = "latex", caption = "Panel", row.names = F,
-  align = c("l", "l", rep("c", ncol(.) - 2)),
-  col.names = c("", "", rep(c("Koefficiens", "P-érték"), (ncol(.) - 2)/2))) %>% 
-  kableExtra::add_header_above(c("Változó" = 2, "I" = 2, "II" = 2, "III" = 2)) %>% 
-  kableExtra::collapse_rows(columns = 1, valign = "top")
-
-```
-
-```{r}
-terms = list(
-  c("GDPcap_l", "GDPcap_l2", "GDPcap_ll")
-  )
-panel.tbl <- data.frame(term = names(c.panel.extended)[-c(1,2,4)]) %>% arrange(term)
-pooltest.p <- vector()
-phtest.p <- vector()
-adj.r <- vector()
-
-for (i in 1:length(terms)) {
-
-formula = as.expression(paste("formula = tfr ~", paste(terms[[i]], collapse = " + ")))
-
-c.panel.pooling.extended <- plm(eval(formula), data = c.panel.extended, model = "pooling")
-c.panel.within.extended <- plm(eval(formula), data = c.panel.extended, model = "within")
-c.panel.random.extended <- plm(eval(formula), data = c.panel.extended, model = "random")
-
-panel.tbl <- cbind(panel.tbl, c.panel.within.extended %>% broom::tidy()  %>% dplyr::select(term, estimate, p.value)  %>% 
-    merge(panel.tbl, all = T) %>% arrange(term) %>% dplyr::select(estimate, p.value) %>% mutate(
-      p.value = scales::percent(p.value, accuracy = .01, decimal.mark = ",")
-    ) %>% set_names(c("változó", "p-érték")))
-
-pooltest.p[i * 2] <- pooltest(c.panel.pooling.extended, c.panel.within.extended)$p.value
-phtest.p[i * 2] <- phtest(c.panel.within.extended, c.panel.random.extended)$p.value
-adj.r[i * 2] <- c.panel.within.extended %>% plm::r.squared(dfcor = T)
-}
-
-panel.s.tbl <- data.frame(' ' = c('Chow-teszt', scales::percent(pooltest.p, accuracy = .01, decimal.mark = ",")),
-           ' ' = c('Hausman-teszt', scales::percent(phtest.p, accuracy = .01, decimal.mark = ",")),
-           ' ' = c('Korrigált R^2', scales::percent(adj.r, accuracy = .01, decimal.mark = ","))
-           ) %>% t() %>% data.frame() %>% set_names(letters[seq_along(.)])
-
-panel.tbl %>% setNames(letters[seq_along(.)]) %>% mutate(
-  a = str_replace(a, "2", "^2"),
-  a = str_replace(a, "GDPcap", "GDP/fő"),
-  a = str_replace(a, "unr", "Munkanélküliségi ráta"),
-) %>% arrange(a) %>% mutate(
-  a = str_replace(a, "_llll", " (l=4)"),
-  a = str_replace(a, "_lll", " (l=3)"),
-  a = str_replace(a, "_ll", " (l=2)"),
-  a = str_replace(a, "_l", " (l=1)")) %>%
-  rbind(panel.s.tbl) %>% mutate(type = c(rep("Paraméter" ,nrow(.) - 3), rep("Jellemző", 3))) %>% 
-  dplyr::select(type, letters[seq(ncol(.) - 1)]) %>% 
-  mutate_at(seq(from = 3, to = ncol(.) - 1, by = 2), 
-  function(x) if_else(is.na(x), "", 
-  as.character(format(as.numeric(x), digits = 3, nsmall = 3, decimal.mark = ",")))) %>%
-  mutate_all(function(x) ifelse(is.na(x), "", x)) %>% 
-  knitr::kable(format = "latex", booktabs = F, row.names = F,
-  align = c("l", "l", rep("c", ncol(.) - 2)),
-  col.names = c("", "", rep(c("Koefficiens", "P-érték"), (ncol(.) - 2)/2))) %>% 
-  kableExtra::add_header_above(c("Változó" = 2, "IV" = 2)) %>% 
-  kableExtra::collapse_rows(columns = 1, valign = "top")
-
-```
-
-```{r}
-# Figure x ------------------------------------------------------------------------------
-c.panel %>% dplyr::select(1:2, 4) %>%
-  pivot_wider(names_from = year, values_from = tfr) %>%
-  set_names(letters[1:ncol(.)]) %>%
-  mutate(desc = f - e) %>% dplyr::select(a, desc) %>% hun_map_plot()
-```
-
-```{r eval = F}
-# Spearman cor between GDPcap and change in GDPcar to change in tfr ---------------------
-c.panel %>% dplyr::select(county, year, tfr, GDPcap) %>%
-  pivot_longer(tfr:GDPcap) %>% 
-  pivot_wider(names_from = year, values_from = value) %>%
-  set_names(letters[1:ncol(.)]) %>%
-  transmute(county = a, var = b, change = g - f, value = g) %>% 
-  mutate(change = change/dplyr::lag(change)) %>% 
-  filter(var == "GDPcap") %>% dplyr::select(change, value) %>% 
-  cor(method = "spearman")
-
 ```
 
 
 ```{r}
-# Figure x ------------------------------------------------------------------------------
-ggplot(data.frame(x = c(0, 10000)), aes(x = x)) +
-  stat_function(fun = function(x) x*c.panel.within.extended$coefficients["GDPcap_l"] + x^2*c.panel.within.extended$coefficients["GDPcap_l2"], size = 2) + 
-  geom_vline(xintercept = c.panel %>% filter(year == 2018) %>% pull(GDPcap) %>% .[-1], linetype = "dashed") +
-  geom_vline(aes(linetype = "Magyar megyék egy főre eső GDP értékei", xintercept = (c.panel %>% filter(year == 2018) %>% pull(GDPcap) %>% .[1]))) +
-  scale_linetype_manual(values = "dashed") +
-  scale_x_continuous(expand = c(0, 0)) +
-  scale_y_continuous(expand = c(0, 0), limits = c(0, 2)) +
-  labs(x = "GDP/fő (ezer Ft-ban) (l = 1)", y = "Egyedi konstanson felüli TTA érték", linetype = NULL)
-
+df %>%
+  group_by(neighbour) %>%
+  summarise(mean(cor)) # mean of correlation
 ```
 
-```{r}
-c.panel.within.extended$coefficients["GDPcap_l"] / (c.panel.within.extended$coefficients["GDPcap_l2"]*-2)
-```
-
-
-```{r}
-# Figure 4 ------------------------------------------------------------------------------
-c.panel.within.extended %>% plm::fixef() %>% data.frame() %>% rownames_to_column() %>% 
-  hun_map_plot() + labs(fill = "TTA") + theme(legend.position = "right")
-
-```
-
-
-```{r fig.cap="TTA becslése megyénként a fix modellel", fig.height=7}
-# Figure 4 ------------------------------------------------------------------------------
-c.panel.within.extended %>% broom::augment() %>% dplyr::select(.rownames, .fitted) %>%
-  merge(c.panel %>% mutate('.rownames' = seq(nrow(c.panel)))) %>% 
-  transmute(Becsült = .fitted, Valós = tfr, county = str_remove_all(county, paste(c(" megye", "-Csanád"), collapse = "|")), year = year) %>%
-  pivot_longer(1:2) %>% 
-  ggplot(aes(x = as.numeric(year), y = value, color = name)) + geom_line(size = 1.2) + 
-  scale_x_continuous(expand = c(0,0)) + #, breaks = seq(2010, 2018, 2)
-  scale_color_grey() +
-  facet_wrap(~county, ncol = 4) + labs(x = "Év", y = "TTA", color = NULL)
-
-```
-
-
-```{r fig.cap="A teljes termékenységi arányszám 2018-ban megyénként"}
-# Figure 5 ------------------------------------------------------------------------------
-c.panel.extended %>% filter(year == 2018) %>% dplyr::select(county, tfr) %>% hun_map_plot() +
-  labs(fill = "TTA") +
-  theme(legend.position = "right")
-
-```
-
-```{r}
-g.panel.extended <- merge(oecd_fertility, oecd_GDPcap, all = T) %>% merge(oecd_unr, all = T) %>% 
-  mutate(
-    unr2 = unr^2,
-    GDPcap2 = GDPcap^2,
-    unr_l = ifelse(location != dplyr::lag(location), NA, dplyr::lag(unr)),
-    unr_l2 = ifelse(location != dplyr::lag(location), NA,dplyr::lag(unr2)),
-    GDPcap_l = ifelse(location != dplyr::lag(location), NA,dplyr::lag(GDPcap)),
-    GDPcap_l2 = ifelse(location != dplyr::lag(location), NA,dplyr::lag(GDPcap2)),
-    unr_ll = ifelse(location != dplyr::lag(location), NA, dplyr::lag(unr_l)),
-    unr_ll2 = ifelse(location != dplyr::lag(location), NA,dplyr::lag(unr_l2)),
-    GDPcap_ll = ifelse(location != dplyr::lag(location), NA,dplyr::lag(GDPcap_l)),
-    GDPcap_ll2 = ifelse(location != dplyr::lag(location), NA,dplyr::lag(GDPcap_l2)),
-    unr_lll = ifelse(location != dplyr::lag(location), NA, dplyr::lag(unr_ll)),
-    unr_lll2 = ifelse(location != dplyr::lag(location), NA,dplyr::lag(unr_ll2)),
-    GDPcap_lll = ifelse(location != dplyr::lag(location), NA,dplyr::lag(GDPcap_ll)),
-    GDPcap_lll2 = ifelse(location != dplyr::lag(location), NA,dplyr::lag(GDPcap_ll2)),
-    unr_llll = ifelse(location != dplyr::lag(location), NA, dplyr::lag(unr_lll)),
-    unr_llll2 = ifelse(location != dplyr::lag(location), NA,dplyr::lag(unr_lll2)),
-    GDPcap_llll = ifelse(location != dplyr::lag(location), NA,dplyr::lag(GDPcap_lll)),
-    GDPcap_llll2 = ifelse(location != dplyr::lag(location), NA,dplyr::lag(GDPcap_lll2))
-  )
-
-
-terms = list(
-  c("GDPcap", "unr"))
-panel.tbl <- data.frame(term = names(g.panel.extended)[-c(1,2,3)]) %>% arrange(term)
-pooltest.p <- vector()
-phtest.p <- vector()
-adj.r <- vector()
-
-for (i in 1:length(terms)) {
-
-formula = as.expression(paste("formula = tfr ~", paste(terms[[i]], collapse = " + ")))
-
-g.panel.pooling.extended <- plm(eval(formula), data = g.panel.extended, model = "pooling")
-g.panel.within.extended <- plm(eval(formula), data = g.panel.extended, model = "within")
-g.panel.random.extended <- plm(eval(formula), data = g.panel.extended, model = "random")
-
-panel.tbl <- cbind(panel.tbl, g.panel.within.extended %>% broom::tidy()  %>% dplyr::select(term, estimate, p.value)  %>% 
-    merge(panel.tbl, all = T) %>% arrange(term) %>% dplyr::select(estimate, p.value) %>% mutate(
-      p.value = scales::percent(p.value, accuracy = .01, decimal.mark = ",")
-    ) %>% set_names(c("változó", "p-érték")))
-
-pooltest.p[i * 2] <- pooltest(g.panel.pooling.extended, g.panel.within.extended)$p.value
-phtest.p[i * 2] <- phtest(g.panel.within.extended, g.panel.random.extended)$p.value
-adj.r[i * 2] <- g.panel.within.extended %>% plm::r.squared(dfcor = T)
-}
-
-panel.s.tbl <- data.frame(' ' = c('Chow-teszt', scales::percent(pooltest.p, accuracy = .01, decimal.mark = ",")),
-           ' ' = c('Hausman-teszt', scales::percent(phtest.p, accuracy = .01, decimal.mark = ",")),
-           ' ' = c('Korrigált R^2', scales::percent(adj.r, accuracy = .01, decimal.mark = ","))
-           ) %>% t() %>% data.frame() %>% set_names(letters[seq_along(.)])
-
-panel.tbl %>% setNames(letters[seq_along(.)]) %>% mutate(
-  a = str_replace(a, "2", "^2"),
-  a = str_replace(a, "GDPcap", "GDP/fő"),
-  a = str_replace(a, "unr", "Munkanélküliségi ráta"),
-) %>% arrange(a) %>% mutate(
-  a = str_replace(a, "_llll", " (l=4)"),
-  a = str_replace(a, "_lll", " (l=3)"),
-  a = str_replace(a, "_ll", " (l=2)"),
-  a = str_replace(a, "_l", " (l=1)")) %>%
-  rbind(panel.s.tbl) %>% mutate(type = c(rep("Paraméter" ,nrow(.) - 3), rep("Jellemző", 3))) %>% 
-  dplyr::select(type, letters[seq(ncol(.) - 1)]) %>% 
-  mutate_at(seq(from = 3, to = ncol(.) - 1, by = 2), 
-  function(x) if_else(is.na(x), "", 
-  as.character(format(as.numeric(x), digits = 3, nsmall = 3, decimal.mark = ",")))) %>%
-  mutate_all(function(x) ifelse(is.na(x), "", x)) %>% 
-  knitr::kable(format = "latex", caption = "Panel", row.names = F,
-  align = c("l", "l", rep("c", ncol(.) - 2)),
-  col.names = c("", "", rep(c("Koefficiens", "P-érték"), (ncol(.) - 2)/2))) %>% 
-  kableExtra::add_header_above(c("Változó" = 2, "I" = 2))  %>% 
-  kableExtra::collapse_rows(columns = 1, valign = "top")
-
-```
-
-
-```{r fig.cap="A magyar és lengyel TTA idősorok között fennálló kointegráció", fig.height=6}
-# Figure 6 ------------------------------------------------------------------------------
-oecd_fertility %>% filter(location %in% c("HUN", "POL")) %>% mutate(
-  tfr_d = c(NA, diff(tfr)),
-  tfr_d = ifelse(time == 1960, NA, tfr_d)
-) %>% pivot_longer(-c(1,2)) %>% rbind(
-  data.frame(location = "HUN", time = 1960:2018,name = "res", value = oecd_fertility %>%
-               filter(location %in% c("HUN", "POL")) %>%
-               pivot_wider(names_from = location, values_from = tfr) %>%
-               lm(formula = HUN ~ POL) %>% .$residuals)
-) %>% mutate(name = factor(name, levels = c("tfr", "tfr_d", "res"))) %>% 
-  ggplot(aes(x = time, y = value, color = location)) + geom_line(size = 1.5) +
-  scale_x_continuous(expand = c(0, 0)) +
-  scale_color_grey() +
-  facet_wrap(~name, ncol = 1, scales = "free",
-             labeller = as_labeller(c('tfr' = "Transzformálatlan idősorok",
-                                      'tfr_d' = 'Differenciázott idősorok',
-                                      'res' = 'OLS maradéktagja'))) +
-  labs(x = "Év", y = NULL, color = NULL)
-
-```
+# Magyarországi idősoros adatok elemzése vektor autoregresszív modellel
 
 ```{r}
 irf_plot <- function(model, n.ahead = 10, ci = .95, plot_filter = NULL, n.col = NULL) {
@@ -667,114 +282,226 @@ irf_plot <- function(model, n.ahead = 10, ci = .95, plot_filter = NULL, n.col = 
       legend.position = "bottom"
     )
 }
-
 ```
 
-## only GDPcap
+## Csak egy főre jutó GDP-t és TTA-t tartalmazó modell
 
 ```{r}
-model <- socioeconomic_indicators %>% merge(LiveBirthAndFertility) %>%
+model <- socioeconomic_indicators %>%
+  merge(LiveBirthAndFertility) %>%
   dplyr::select(TotalFertility, GDPCAP1960) %>%
-  set_names(c("TTA", "GDP")) %>% 
-  mutate_at(1:2 , function(x) {
-    d = ndiffs(x, test = "kpss", type = "level"); if (d > 0) x <- c(rep(NA, d), diff(x))
+  set_names(c("TTA", "GDP")) %>%
+  mutate_at(1:2, function(x) {
+    d <- ndiffs(x, test = "kpss", type = "level")
+    if (d > 0) x <- c(rep(NA, d), diff(x))
     x
-  }) %>%  na.exclude() %>% ts() %>%
+  }) %>%
+  na.exclude() %>%
+  ts() %>%
   vars::VAR(ic = "AIC")
 ```
 
 ```{r}
 model %>% vars::roots()
+model %>% summary()
 vars::causality(model, cause = "TTA")
 vars::causality(model, cause = "GDP")
 ```
 
 ```{r}
-model %>% irf_plot(plot_filter = c(1, 2), n.col = 1, n.ahead = 7)
+model %>% irf_plot(plot_filter = c(1, 2), n.col = 1, n.ahead = 7) +
+  labs(title = "GDP/fő és TTA-t tartalmazó VAR modellből számított impulzus válaszfüggvények")
 ```
 
 ```{r}
-# Figure x ------------------------------------------------------------------------------
-model %>% vars::fevd() %>% .$TTA %>% data.frame() %>% mutate(
-    t = seq(from = 0, to = nrow(.) - 1)
-  ) %>% gather(key = "variable", value = "value", -t) %>%
-  ggplot() + geom_area(aes(x = t, y = value, fill = variable), color = "black") +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1), expand = c(0, 0)) +
-  scale_fill_grey() +
-  scale_x_continuous(labels = 0:5, breaks = 0:5, expand = c(0, 0), limits = c(0,5)) +
-  labs(x = "Év", y = "TTA varianciájának magyarázata", fill = NULL)
+model %>%
+  vars::fevd() %>%
+  .$TTA
 ```
 
-## total model
+## Az egy főre jutó GDP-t, munkanélküliségi rátát és TTA-t tartalmazó modell
 
 ```{r}
-model <- socioeconomic_indicators %>% merge(LiveBirthAndFertility) %>%
+model <- socioeconomic_indicators %>%
+  merge(LiveBirthAndFertility) %>%
   dplyr::select(TotalFertility, UnemploymentT, GDPCAP1960) %>%
-  set_names(c("TTA", "Munkanélküliség", "GDP")) %>% 
-  mutate_at(1:3 , function(x) {
-    d = ndiffs(x, test = "kpss", type = "level"); if (d > 0) x <- c(rep(NA, d), diff(x))
+  set_names(c("TTA", "Munkanélküliség", "GDP")) %>%
+  mutate_at(1:3, function(x) {
+    d <- ndiffs(x, test = "kpss", type = "level")
+    if (d > 0) x <- c(rep(NA, d), diff(x))
     x
-  }) %>%  na.exclude() %>% ts() %>% 
+  }) %>%
+  na.exclude() %>%
+  ts() %>%
   vars::VAR(ic = "AIC")
-
 ```
 
-```{r eval = F}
+```{r}
+model %>% vars::roots()
 model %>% summary()
-
 ```
 
-
-
+A kauzalitás vizsgálatok gretl-ben történtek.
 
 ```{r fig.cap="Impulzus válaszfüggvények"}
-model %>% irf_plot()
-
+model %>% irf_plot() + labs(title = "GDP/fő, munkanélküliségi rátát és TTA-t tartalmazó VAR modellből számított impulzus válaszfüggvények")
 ```
 
-```{r fig.cap="A TTA variancia dekompozíciója"}
-# Figure x ------------------------------------------------------------------------------
-model %>% vars::fevd() %>% .$TTA %>% data.frame() %>% mutate(
+```{r}
+model %>%
+  vars::fevd() %>%
+  .$TTA %>%
+  data.frame() %>%
+  mutate(
     t = seq(from = 0, to = nrow(.) - 1)
-  ) %>% gather(key = "variable", value = "value", -t) %>%
+  ) %>%
+  gather(key = "variable", value = "value", -t) %>%
   mutate(variable = factor(case_when(
     variable == "Munkanélküliség" ~ "Munkanélküliség",
     variable == "GDP" ~ "GDP/fő",
     T ~ "TTA"
-  ), levels = c("Munkanélküliség", "GDP/fő", "TTA"))) %>% 
-  ggplot() + geom_area(aes(x = t, y = value, fill = variable), color = "black") +
+  ), levels = c("Munkanélküliség", "GDP/fő", "TTA"))) %>%
+  ggplot() +
+  geom_area(aes(x = t, y = value, fill = variable), color = "black") +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1), expand = c(0, 0)) +
   scale_fill_grey() +
-  scale_x_continuous(labels = 0:5, breaks = 0:5, expand = c(0, 0), limits = c(0,5)) +
-  labs(x = "Év", y = "TTA varianciájának magyarázata", fill = NULL)
+  scale_x_continuous(labels = 0:5, breaks = 0:5, expand = c(0, 0), limits = c(0, 5)) +
+  labs(x = "Év", y = "TTA varianciájának magyarázata", fill = NULL, title = "GDP/fő, munkanélküliségi rátát és TTA-t tartalmazó VAR modellből számított varianciadekompozíció")
 ```
 
-```{r fig.height=3, fig.cap="ARIMA (0,0,1) modellel készített előrejelzés a termékenységi rátára"}
-model <- LiveBirthAndFertility$TotalFertility %>% ts(start = 1960) %>% 
-auto.arima(ic = "aic", stepwise = F) 
-autoplot(forecast::forecast(model, h = 10), ts.connect = T, conf.int.fill = "grey50", predict.colour = "black", predict.linetype = "dashed") +
-  labs(x = "Év", y = "TTA") + scale_x_continuous(expand = c(0, 0))
+# Magyarországi panel adatok
+
+```{r}
+c.panel.extended <- c.panel %>%
+  transmute(
+    county, year, tfr, GDPcap,
+    GDPcap2 = GDPcap^2,
+    GDPcap_l = ifelse(year == 2005, NA, dplyr::lag(GDPcap)),
+    GDPcap_l2 = ifelse(year == 2005, NA, dplyr::lag(GDPcap2)),
+    GDPcap_ll = ifelse(year == 2005, NA, dplyr::lag(GDPcap_l)),
+    GDPcap_ll2 = ifelse(year == 2005, NA, dplyr::lag(GDPcap_l2)),
+    GDPcap_lll = ifelse(year == 2005, NA, dplyr::lag(GDPcap_ll)),
+    GDPcap_lll2 = ifelse(year == 2005, NA, dplyr::lag(GDPcap_ll2)),
+    unr,
+    unr2 = unr^2,
+    unr_l = ifelse(year == 2005, NA, dplyr::lag(unr)),
+    unr_l2 = ifelse(year == 2005, NA, dplyr::lag(unr2)),
+    unr_ll = ifelse(year == 2005, NA, dplyr::lag(unr_l)),
+    unr_ll2 = ifelse(year == 2005, NA, dplyr::lag(unr_l2)),
+    unr_lll = ifelse(year == 2005, NA, dplyr::lag(unr_ll)),
+    unr_lll2 = ifelse(year == 2005, NA, dplyr::lag(unr_ll2)),
+  )
+
+terms <- list(
+  c("GDPcap", "unr"),
+  c(
+    "GDPcap", "unr", "unr2", "GDPcap2", "unr_l", "unr_l2", "GDPcap_l",
+    "GDPcap_l2", "unr_ll", "unr_ll2", "GDPcap_ll", "GDPcap_ll2", "unr_lll", "unr_lll2",
+    "GDPcap_lll", "GDPcap_lll2"
+  ),
+  c(
+    "GDPcap", "GDPcap2", "GDPcap_l",
+    "GDPcap_l2", "GDPcap_ll", "GDPcap_ll2"
+  ),
+  c("GDPcap_l", "GDPcap_l2", "GDPcap_ll")
+)
+panel.tbl <- data.frame(term = c(names(c.panel.extended)[-c(1, 2, 3)], "Chow-teszt", "Hausman-teszt", "Korrigált R^2"))
+
+for (i in 1:length(terms)) {
+  formula <- as.expression(paste("formula = tfr ~", paste(terms[[i]], collapse = " + ")))
+
+  c.panel.pooling.extended <- plm(eval(formula), data = c.panel.extended, model = "pooling")
+  c.panel.within.extended <- plm(eval(formula), data = c.panel.extended, model = "within")
+  c.panel.random.extended <- plm(eval(formula), data = c.panel.extended, model = "random")
+
+  panel.tbl <- panel.tbl %>% merge(c.panel.within.extended %>% broom::tidy() %>% transmute(
+    term,
+    estimate = paste0(as.character(format(estimate, digits = 3, nsmall = 3, decimal.mark = ",")), case_when(
+      p.value < .01 ~ "***",
+      p.value < .05 ~ "**",
+      p.value < .1 ~ "*",
+      T ~ ""
+    ))
+  ) %>% rbind(
+    data.frame(
+      term = c("Chow-teszt", "Hausman-teszt", "Korrigált R^2"),
+      estimate = c(
+        pooltest(c.panel.pooling.extended, c.panel.within.extended)$p.value %>% scales::percent(accuracy = .01, decimal.mark = ","),
+        phtest(c.panel.within.extended, c.panel.random.extended)$p.value %>% scales::percent(accuracy = .01, decimal.mark = ","),
+        c.panel.within.extended %>% plm::r.squared(dfcor = T) %>% scales::percent(accuracy = .01, decimal.mark = ",")
+      )
+    )
+  ) %>% set_names(c("term", i)),
+  all = T
+  )
+}
+panel.tbl %>%
+  setNames(c("variable", as.roman(1:(ncol(.) - 1)))) %>%
+  mutate(variable = factor(variable, levels = c(names(c.panel.extended), "Chow-teszt", "Hausman-teszt", "Korrigált R^2"))) %>%
+  arrange(variable) %>%
+  mutate(
+    variable = as.character(variable),
+    variable = str_replace(variable, "2", "^2"),
+    variable = ifelse(variable == "Korrigált R^^2", "Korrigált R^2", variable),
+    variable = str_replace(variable, "GDPcap", "GDP/fő"),
+    variable = str_replace(variable, "unr", "Munkanélküliségi ráta"),
+    variable = str_replace(variable, "_lll", " (l=3)"),
+    variable = str_replace(variable, "_ll", " (l=2)"),
+    variable = str_replace(variable, "_l", " (l=1)")
+  ) %>%
+  mutate_all(function(x) ifelse(is.na(x), "", x)) %>%
+  knitr::kable(
+    col.names = c("változó", "I.", "II.", "III.", "IV."),
+    align = c("l", rep("c", ncol(.) - 1)), caption = "Becsült longitudinális modellek a TTA-ra"
+  )
 ```
 
-
-\pagebreak
-\nocite{*}
-\bibliography{ujdemografiaiprogram}
-\bibliographystyle{agsm}
-
-# Függelék
-
-\listoffigures
-\listoftables
-
-## A tanulmány elkészítéséhez használt R kódok
-
-```{r get-labels}
-labs <- knitr::all_labels()
-labs <- setdiff(labs, c("setup", "get-labels"))
+```{r}
+# Hungarian map draw function -----------
+hun_map_plot <- function(df, na.value = "white", low = "white", high = "black") {
+  hunsf %>%
+    merge(set_names(df, c("NAME", "value"))) %>%
+    ggplot() +
+    geom_sf(aes(fill = value)) +
+    ggthemes::theme_map() +
+    scale_fill_gradient(
+      na.value = na.value, low = low, high = high,
+      guide = guide_colorbar(frame.colour = "black", ticks.colour = "black")
+    )
+}
 ```
 
-```{r all-code, ref.label=labs, eval=FALSE, echo=T, attr.source='.numberLines'}
+```{r}
+c.panel.within.extended %>%
+  plm::fixef() %>%
+  data.frame() %>%
+  rownames_to_column() %>%
+  hun_map_plot() + labs(fill = "TTA", title = "A IV. longitudinális modell egyedi konstansai") + theme(legend.position = "right")
 ```
 
+```{r fig.height=7}
+c.panel.within.extended %>%
+  broom::augment() %>%
+  dplyr::select(.rownames, .fitted) %>%
+  merge(c.panel %>% mutate(".rownames" = seq(nrow(c.panel)))) %>%
+  transmute(Becsült = .fitted, Valós = tfr, county = str_remove_all(county, paste(c(" megye", "-Csanád"), collapse = "|")), year = year) %>%
+  pivot_longer(1:2) %>%
+  ggplot(aes(x = as.numeric(year), y = value, color = name)) +
+  geom_line(size = 1.2) +
+  scale_x_continuous(expand = c(0, 0), breaks = seq(2008, 2016, 4)) +
+  scale_color_grey() +
+  facet_wrap(~county, ncol = 4) +
+  labs(x = "Év", y = "TTA", color = NULL, title = "TTA becslése megyénként a fix modellel")
+```
 
+```{r}
+ggplot(data.frame(x = c(0, 10000)), aes(x = x)) +
+  stat_function(fun = function(x) x * c.panel.within.extended$coefficients["GDPcap_l"] + x^2 * c.panel.within.extended$coefficients["GDPcap_l2"], size = 2) +
+  geom_vline(xintercept = c.panel %>% filter(year == 2018) %>% pull(GDPcap) %>% .[-1], linetype = "dashed") +
+  geom_vline(aes(linetype = "Magyar megyék egy főre eső GDP értékei", xintercept = (c.panel %>% filter(year == 2018) %>% pull(GDPcap) %>% .[1]))) +
+  scale_linetype_manual(values = "dashed") +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 2)) +
+  labs(x = "GDP/fő (ezer Ft-ban) (l = 1)", y = "Egyedi konstanson felüli TTA érték", linetype = NULL, title = "A GDP/fő hatása a TTA-ra a IV. panel modell alapján") +
+  theme(plot.margin = unit(c(1, 1, 1, 1), "cm"))
+```
