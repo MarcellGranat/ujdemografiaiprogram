@@ -1,29 +1,12 @@
----
-title: "A termékenységi ráta kapcsolata az egy főre eső bruttó kibocsátással és a munkanélküliséggel"
-author: Granát Marcell
-date: 2020-10-01
-output: github_document
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = T, comment = "", warning = F, message = F, cache = T, error = T,dev = "svg")
-```
-
-```{r echo=TRUE, include=FALSE}
-library(ggpubr)
-library(tseries)
-library(forecast)
-library(plm)
-library(sf)
-library(tidyverse)
-library(ggfortify)
-theme_set(theme_bw() + theme(legend.position = "bottom"))
-repmis::source_data("https://raw.githubusercontent.com/MarcellGranat/ujdemografiaiprogram/main/ujdemografiaiprogram.RData")
-```
+A termékenységi ráta kapcsolata az egy főre eső bruttó kibocsátással és
+a munkanélküliséggel
+================
+Granát Marcell
+2020-10-01
 
 # A magyar születésszám az elmúlt 60 évben
 
-```{r fig.height=3.5}
+``` r
 LiveBirthAndFertility %>%
   mutate_at(-1, function(x) x / x[1]) %>%
   pivot_longer(-1) %>%
@@ -48,9 +31,11 @@ LiveBirthAndFertility %>%
   theme(legend.box = "vertical")
 ```
 
+![](ujdemografiaiprogram_files/figure-gfm/unnamed-chunk-2-1.svg)<!-- -->
+
 # Kointegrációs teszt az OECD által közölt termékenységi arányszámokon
 
-```{r fig.height=6}
+``` r
 oecd_fertility %>%
   filter(location %in% c("HUN", "POL")) %>%
   mutate(
@@ -80,7 +65,9 @@ oecd_fertility %>%
   labs(x = "Év", y = NULL, color = NULL, title = "A magyar és lengyel TTA idősorok között fennálló kointegráció")
 ```
 
-```{r}
+![](ujdemografiaiprogram_files/figure-gfm/unnamed-chunk-3-1.svg)<!-- -->
+
+``` r
 nodes <- CountryData %>%
   filter(code3 %in% names(NeighbourCountry)) %>%
   dplyr::select(code3, longitude, latitude) %>%
@@ -118,7 +105,9 @@ ggplot(nodes) +
   theme(legend.position = "bottom")
 ```
 
-```{r}
+![](ujdemografiaiprogram_files/figure-gfm/unnamed-chunk-4-1.svg)<!-- -->
+
+``` r
 df <- NeighbourCountry %>%
   mutate(x = names(NeighbourCountry)) %>%
   pivot_longer(-x, names_to = "y", values_to = "neighbour") %>%
@@ -167,7 +156,7 @@ df <- merge(df, oecd_fertility %>%
   pivot_longer(-1, names_to = "y", values_to = "cor"))
 ```
 
-```{r fig.height=5.8}
+``` r
 ggplot(data = df) +
   geom_tile(aes(x = x, y = y, fill = coint), color = "black") +
   labs(x = "", y = "", fill = "", title = "Kointegrációs tesztek eredményei") +
@@ -175,7 +164,9 @@ ggplot(data = df) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.45))
 ```
 
-```{r}
+![](ujdemografiaiprogram_files/figure-gfm/unnamed-chunk-6-1.svg)<!-- -->
+
+``` r
 df %>%
   group_by(neighbour, coint) %>%
   summarise(n = n()) %>%
@@ -190,16 +181,33 @@ df %>%
   )
 ```
 
+|                         | Határosak | Nem határosak |
+| ----------------------- | :-------: | :-----------: |
+| A teszt nem elvégezhető |   32,2%   |     49,4%     |
+| Nem kointegráltak       |   27,6%   |     27,9%     |
+| Kointegráltak           |   40,2%   |     22,7%     |
 
-```{r}
+Tesztek eredményeinek arányai egymással határos és nem határos országok
+esetében
+
+``` r
 df %>%
   group_by(neighbour) %>%
   summarise(mean(cor)) # mean of correlation
 ```
 
+``` 
+# A tibble: 3 x 2
+  neighbour     `mean(cor)`
+  <chr>               <dbl>
+1 Határosak           0.829
+2 Nem határosak       0.721
+3 <NA>                1    
+```
+
 # Magyarországi idősoros adatok elemzése vektor autoregresszív modellel
 
-```{r}
+``` r
 irf_plot <- function(model, n.ahead = 10, ci = .95, plot_filter = NULL, n.col = NULL) {
   irf <- model %>%
     vars::irf(n.ahead = n.ahead, ci = ci)
@@ -286,7 +294,7 @@ irf_plot <- function(model, n.ahead = 10, ci = .95, plot_filter = NULL, n.col = 
 
 ## Csak egy főre jutó GDP-t és TTA-t tartalmazó modell
 
-```{r}
+``` r
 model <- socioeconomic_indicators %>%
   merge(LiveBirthAndFertility) %>%
   dplyr::select(TotalFertility, GDPCAP1960) %>%
@@ -301,27 +309,144 @@ model <- socioeconomic_indicators %>%
   vars::VAR(ic = "AIC")
 ```
 
-```{r}
+``` r
 model %>% vars::roots()
+```
+
+    [1] 0.4350131 0.4350131
+
+``` r
 model %>% summary()
+```
+
+``` 
+
+VAR Estimation Results:
+========================= 
+Endogenous variables: TTA, GDP 
+Deterministic variables: const 
+Sample size: 56 
+Log Likelihood: -106.189 
+Roots of the characteristic polynomial:
+0.435 0.435
+Call:
+vars::VAR(y = ., ic = "AIC")
+
+
+Estimation results for equation TTA: 
+==================================== 
+TTA = TTA.l1 + GDP.l1 + const 
+
+        Estimate Std. Error t value Pr(>|t|)   
+TTA.l1  0.334521   0.122613   2.728  0.00862 **
+GDP.l1  0.002822   0.001362   2.071  0.04322 * 
+const  -0.014359   0.010446  -1.375  0.17504   
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+
+Residual standard error: 0.06893 on 53 degrees of freedom
+Multiple R-Squared: 0.2015, Adjusted R-squared: 0.1714 
+F-statistic: 6.687 on 2 and 53 DF,  p-value: 0.002572 
+
+
+Estimation results for equation GDP: 
+==================================== 
+GDP = TTA.l1 + GDP.l1 + const 
+
+       Estimate Std. Error t value Pr(>|t|)    
+TTA.l1  -4.3149    10.6453  -0.405   0.6869    
+GDP.l1   0.5293     0.1183   4.475 4.08e-05 ***
+const    1.9014     0.9069   2.097   0.0408 *  
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+
+Residual standard error: 5.984 on 53 degrees of freedom
+Multiple R-Squared: 0.2745, Adjusted R-squared: 0.2471 
+F-statistic: 10.03 on 2 and 53 DF,  p-value: 0.0002028 
+
+
+
+Covariance matrix of residuals:
+          TTA      GDP
+TTA  0.004751 -0.01842
+GDP -0.018421 35.81064
+
+Correlation matrix of residuals:
+         TTA      GDP
+TTA  1.00000 -0.04466
+GDP -0.04466  1.00000
+```
+
+``` r
 vars::causality(model, cause = "TTA")
+```
+
+    $Granger
+    
+        Granger causality H0: TTA do not Granger-cause GDP
+    
+    data:  VAR object model
+    F-Test = 0.1643, df1 = 1, df2 = 106, p-value = 0.686
+    
+    
+    $Instant
+    
+        H0: No instantaneous causality between: TTA and GDP
+    
+    data:  VAR object model
+    Chi-squared = 0.11147, df = 1, p-value = 0.7385
+
+``` r
 vars::causality(model, cause = "GDP")
 ```
 
-```{r}
+    $Granger
+    
+        Granger causality H0: GDP do not Granger-cause TTA
+    
+    data:  VAR object model
+    F-Test = 4.2899, df1 = 1, df2 = 106, p-value = 0.04077
+    
+    
+    $Instant
+    
+        H0: No instantaneous causality between: GDP and TTA
+    
+    data:  VAR object model
+    Chi-squared = 0.11147, df = 1, p-value = 0.7385
+
+``` r
 model %>% irf_plot(plot_filter = c(1, 2), n.col = 1, n.ahead = 7) +
   labs(title = "GDP/fő és TTA-t tartalmazó VAR modellből számított impulzus válaszfüggvények")
 ```
 
-```{r}
+![](ujdemografiaiprogram_files/figure-gfm/unnamed-chunk-12-1.svg)<!-- -->
+
+``` r
 model %>%
   vars::fevd() %>%
   .$TTA
 ```
 
+``` 
+            TTA        GDP
+ [1,] 1.0000000 0.00000000
+ [2,] 0.9485717 0.05142830
+ [3,] 0.9140946 0.08590538
+ [4,] 0.9003777 0.09962226
+ [5,] 0.8959989 0.10400111
+ [6,] 0.8947696 0.10523041
+ [7,] 0.8944536 0.10554639
+ [8,] 0.8943776 0.10562244
+ [9,] 0.8943602 0.10563982
+[10,] 0.8943564 0.10564362
+```
+
 ## Az egy főre jutó GDP-t, munkanélküliségi rátát és TTA-t tartalmazó modell
 
-```{r}
+``` r
 model <- socioeconomic_indicators %>%
   merge(LiveBirthAndFertility) %>%
   dplyr::select(TotalFertility, UnemploymentT, GDPCAP1960) %>%
@@ -336,18 +461,106 @@ model <- socioeconomic_indicators %>%
   vars::VAR(ic = "AIC")
 ```
 
-```{r}
+``` r
 model %>% vars::roots()
+```
+
+    [1] 0.8589995 0.2316852 0.2316852
+
+``` r
 model %>% summary()
+```
+
+``` 
+
+VAR Estimation Results:
+========================= 
+Endogenous variables: TTA, Munkanélküliség, GDP 
+Deterministic variables: const 
+Sample size: 18 
+Log Likelihood: -40.693 
+Roots of the characteristic polynomial:
+0.859 0.2317 0.2317
+Call:
+vars::VAR(y = ., ic = "AIC")
+
+
+Estimation results for equation TTA: 
+==================================== 
+TTA = TTA.l1 + Munkanélküliség.l1 + GDP.l1 + const 
+
+                    Estimate Std. Error t value Pr(>|t|)   
+TTA.l1             -0.060635   0.200079  -0.303  0.76630   
+Munkanélküliség.l1  0.012837   0.005349   2.400  0.03087 * 
+GDP.l1              0.004412   0.001475   2.990  0.00974 **
+const              -0.113110   0.047905  -2.361  0.03325 * 
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+
+Residual standard error: 0.03554 on 14 degrees of freedom
+Multiple R-Squared: 0.4052, Adjusted R-squared: 0.2777 
+F-statistic: 3.178 on 3 and 14 DF,  p-value: 0.05722 
+
+
+Estimation results for equation Munkanélküliség: 
+================================================ 
+Munkanélküliség = TTA.l1 + Munkanélküliség.l1 + GDP.l1 + const 
+
+                   Estimate Std. Error t value Pr(>|t|)    
+TTA.l1             -4.91229    5.87641  -0.836   0.4172    
+Munkanélküliség.l1  0.78325    0.15710   4.986   0.0002 ***
+GDP.l1             -0.06977    0.04333  -1.610   0.1297    
+const               1.97827    1.40699   1.406   0.1815    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+
+Residual standard error: 1.044 on 14 degrees of freedom
+Multiple R-Squared: 0.8117, Adjusted R-squared: 0.7714 
+F-statistic: 20.12 on 3 and 14 DF,  p-value: 2.408e-05 
+
+
+Estimation results for equation GDP: 
+==================================== 
+GDP = TTA.l1 + Munkanélküliség.l1 + GDP.l1 + const 
+
+                   Estimate Std. Error t value Pr(>|t|)
+TTA.l1              -4.2122    42.5279  -0.099    0.923
+Munkanélküliség.l1  -0.9274     1.1370  -0.816    0.428
+GDP.l1               0.2414     0.3136   0.770    0.454
+const               12.0531    10.1824   1.184    0.256
+
+
+Residual standard error: 7.553 on 14 degrees of freedom
+Multiple R-Squared: 0.1828, Adjusted R-squared: 0.007687 
+F-statistic: 1.044 on 3 and 14 DF,  p-value: 0.4037 
+
+
+
+Covariance matrix of residuals:
+                      TTA Munkanélküliség      GDP
+TTA              0.001263        -0.01175  0.03661
+Munkanélküliség -0.011753         1.08928 -5.21863
+GDP              0.036613        -5.21863 57.05124
+
+Correlation matrix of residuals:
+                    TTA Munkanélküliség     GDP
+TTA              1.0000         -0.3169  0.1364
+Munkanélküliség -0.3169          1.0000 -0.6620
+GDP              0.1364         -0.6620  1.0000
 ```
 
 A kauzalitás vizsgálatok gretl-ben történtek.
 
-```{r fig.cap="Impulzus válaszfüggvények"}
+``` r
 model %>% irf_plot() + labs(title = "GDP/fő, munkanélküliségi rátát és TTA-t tartalmazó VAR modellből számított impulzus válaszfüggvények")
 ```
 
-```{r}
+![Impulzus
+válaszfüggvények](ujdemografiaiprogram_files/figure-gfm/unnamed-chunk-16-1.svg)
+
+``` r
 model %>%
   vars::fevd() %>%
   .$TTA %>%
@@ -369,9 +582,11 @@ model %>%
   labs(x = "Év", y = "TTA varianciájának magyarázata", fill = NULL, title = "GDP/fő, munkanélküliségi rátát és TTA-t tartalmazó VAR modellből számított varianciadekompozíció")
 ```
 
+![](ujdemografiaiprogram_files/figure-gfm/unnamed-chunk-17-1.svg)<!-- -->
+
 # Magyarországi panel adatok
 
-```{r}
+``` r
 c.panel.extended <- c.panel %>%
   transmute(
     county, year, tfr, GDPcap,
@@ -456,7 +671,31 @@ panel.tbl %>%
   )
 ```
 
-```{r}
+| változó                       |        I.        |      II.       |      III.      |       IV.        |
+| :---------------------------- | :--------------: | :------------: | :------------: | :--------------: |
+| GDP/fő                        |  6,34e-05\*\*\*  |   \-9,61e-05   |    8,53e-05    |                  |
+| GDP/fő^2                      |                  |    1,15e-08    |   \-1,33e-09   |                  |
+| GDP/fő (l=1)                  |                  | 3,54e-04\*\*\* | 4,23e-04\*\*\* |  4,63e-04\*\*\*  |
+| GDP/fő (l=1)^2                |                  |  \-3,24e-08\*  | \-3,77e-08\*\* | \-3,15e-08\*\*\* |
+| GDP/fő (l=2)                  |                  |   2,00e-04\*   |  \-1,48e-04\*  |  \-8,16e-05\*\*  |
+| GDP/fő (l=2)^2                |                  |   \-2,06e-08   |    9,40e-09    |                  |
+| GDP/fő (l=3)                  |                  |   \-7,65e-05   |                |                  |
+| GDP/fő (l=3)^2                |                  |    8,49e-09    |                |                  |
+| Munkanélküliségi ráta         | \-2,05e-02\*\*\* |   \-2,39e-03   |                |                  |
+| Munkanélküliségi ráta^2       |                  |   \-2,66e-04   |                |                  |
+| Munkanélküliségi ráta (l=1)   |                  |    9,95e-04    |                |                  |
+| Munkanélküliségi ráta (l=1)^2 |                  |   \-2,73e-04   |                |                  |
+| Munkanélküliségi ráta (l=2)   |                  |    3,21e-03    |                |                  |
+| Munkanélküliségi ráta (l=2)^2 |                  |   \-2,29e-04   |                |                  |
+| Munkanélküliségi ráta (l=3)   |                  |    1,23e-02    |                |                  |
+| Munkanélküliségi ráta (l=3)^2 |                  |   \-1,44e-04   |                |                  |
+| Chow-teszt                    |      0,00%       |     0,00%      |     0,00%      |      0,00%       |
+| Hausman-teszt                 |      0,00%       |     0,07%      |     0,00%      |      0,00%       |
+| Korrigált R^2                 |      68,07%      |     82,75%     |     71,41%     |      71,02%      |
+
+Becsült longitudinális modellek a TTA-ra
+
+``` r
 # Hungarian map draw function -----------
 hun_map_plot <- function(df, na.value = "white", low = "white", high = "black") {
   hunsf %>%
@@ -471,7 +710,7 @@ hun_map_plot <- function(df, na.value = "white", low = "white", high = "black") 
 }
 ```
 
-```{r}
+``` r
 c.panel.within.extended %>%
   plm::fixef() %>%
   data.frame() %>%
@@ -479,7 +718,9 @@ c.panel.within.extended %>%
   hun_map_plot() + labs(fill = "TTA", title = "A IV. longitudinális modell egyedi konstansai") + theme(legend.position = "right")
 ```
 
-```{r fig.height=7}
+![](ujdemografiaiprogram_files/figure-gfm/unnamed-chunk-20-1.svg)<!-- -->
+
+``` r
 c.panel.within.extended %>%
   broom::augment() %>%
   dplyr::select(.rownames, .fitted) %>%
@@ -494,7 +735,9 @@ c.panel.within.extended %>%
   labs(x = "Év", y = "TTA", color = NULL, title = "TTA becslése megyénként a fix modellel")
 ```
 
-```{r}
+![](ujdemografiaiprogram_files/figure-gfm/unnamed-chunk-21-1.svg)<!-- -->
+
+``` r
 ggplot(data.frame(x = c(0, 10000)), aes(x = x)) +
   stat_function(fun = function(x) x * c.panel.within.extended$coefficients["GDPcap_l"] + x^2 * c.panel.within.extended$coefficients["GDPcap_l2"], size = 2) +
   geom_vline(xintercept = c.panel %>% filter(year == 2018) %>% pull(GDPcap) %>% .[-1], linetype = "dashed") +
@@ -505,3 +748,5 @@ ggplot(data.frame(x = c(0, 10000)), aes(x = x)) +
   labs(x = "GDP/fő (ezer Ft-ban) (l = 1)", y = "Egyedi konstanson felüli TTA érték", linetype = NULL, title = "A GDP/fő hatása a TTA-ra a IV. panel modell alapján") +
   theme(plot.margin = unit(c(1, 1, 1, 1), "cm"))
 ```
+
+![](ujdemografiaiprogram_files/figure-gfm/unnamed-chunk-22-1.svg)<!-- -->
