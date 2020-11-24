@@ -1,4 +1,4 @@
-# A termékenységi ráta kapcsolata az egy főre eső bruttó kibocsátással és a munkanélküliséggel <img src="logo.png" align="right" width="120" height="140" />
+# A termékenységi ráta kapcsolata az egy főre eső bruttó kibocsátással és a munkanélküliséggel <img src="logo.png" align="right" width="140" height="140" />
 
 Ez a repository az Új jövőkép MNB Tanulmányi Verseny *Új Demográfiai Program* szekciójába készült *A termékenységi ráta kapcsolata az egy főre eső bruttó kibocsátással és a munkanélküliséggel* című cikk kódjait tartalmazza.
 
