@@ -1,0 +1,15 @@
+book_filename: "my-book.Rmd"
+language:
+  ui:
+    edit: "Jump to GitHub"
+  label:
+    fig: "Ábra "
+    tab: "Táblázat "
+edit: https://github.com/MarcellGranat/ujdemografiaiprogram/%s
+output_dir: "docs"
+sharing:
+  github: yes
+  facebook: yes
+  twitter: yes
+  all: no
+rmd_files: ["index.Rmd", "bookdown/Chapter-1.Rmd"]
