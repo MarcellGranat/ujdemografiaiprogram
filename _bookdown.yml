@@ -12,4 +12,4 @@ sharing:
   facebook: yes
   twitter: yes
   all: no
-rmd_files: ["index.Rmd", "bookdown/Chapter-1.Rmd"]
+rmd_files: ["index.Rmd", "Chapter-1.Rmd", "Chapter-2.Rmd"]
