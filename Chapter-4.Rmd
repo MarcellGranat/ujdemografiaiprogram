@@ -2,8 +2,8 @@
 
 ```{css, echo=FALSE}
 p {
-text-align: justify;
-  }
+  text-align: justify;
+}
 ```
 
 ## Elméleti megfontolás
@@ -21,7 +21,7 @@ Az idősor ezen eszközének alkalmazása már feltételeket szab a vizsgált id
 
 A kointegráció tesztelésének egy példáját mutatom be Magyarország és Lengyelország termékenységi rátája között. Az általános bemutatáshoz azért esett ezen két idősorra választásom, mert a későbbiekben kifejtésre kerülő eredményekből a kointegráció ténye itt megállapításra került. A kointegráció tesztelésének mindhárom lépését prezentálja a 2. ábra.
 
-```{r fig.cap="A magyar és lengyel TTA idősorok között fennálló kointegráció", fig.height=10}
+```{r fig.cap="A magyar és lengyel TTA idősorok között fennálló kointegráció", fig.height=8}
 oecd_fertility %>%
   filter(location %in% c("HUN", "POL")) %>%
   mutate(
@@ -30,10 +30,11 @@ oecd_fertility %>%
   ) %>%
   pivot_longer(-c(1, 2)) %>%
   rbind(
-    data.frame(location = "HUN", time = 1960:2018, name = "res", value = oecd_fertility %>%
-      filter(location %in% c("HUN", "POL")) %>%
-      pivot_wider(names_from = location, values_from = tfr) %>%
-      lm(formula = HUN ~ POL) %>% .$residuals)
+    data.frame(location = "HUN", time = 1960:2018, name = "res",
+               value = oecd_fertility %>%
+                 filter(location %in% c("HUN", "POL")) %>%
+                 pivot_wider(names_from = location, values_from = tfr) %>%
+                 lm(formula = HUN ~ POL) %>% .$residuals)
   ) %>%
   mutate(name = factor(name, levels = c("tfr", "tfr_d", "res"))) %>%
   ggplot(aes(x = time, y = value, color = location)) +
@@ -41,12 +42,12 @@ oecd_fertility %>%
   scale_x_continuous(expand = c(0, 0)) +
   scale_color_grey() +
   facet_wrap(~name,
-    ncol = 1, scales = "free",
-    labeller = as_labeller(c(
-      "tfr" = "Transzformálatlan idősorok",
-      "tfr_d" = "Differenciázott idősorok",
-      "res" = "OLS maradéktagja"
-    ))
+             ncol = 1, scales = "free",
+             labeller = as_labeller(c(
+               "tfr" = "Transzformálatlan idősorok",
+               "tfr_d" = "Differenciázott idősorok",
+               "res" = "OLS maradéktagja"
+             ))
   ) +
   labs(x = "Év", y = NULL, color = NULL)
 ```
@@ -57,7 +58,7 @@ A 2. ábra első paneljében láthatóak az eredeti idősoraink. Jól látható 
 
 Az imént bemutatott általános modell lefuttatásra került az OECD honlapján elérhető 52 ország termékenységi rátájának idősorából készíthető összes párosításon. A tesztek végrehajtása során minden alkalommal KPSS-teszt került végrehajtásra és 5%-os szignifikanciaszinten lettek a döntések meghozva. A kointegrációs tesztek eredményét az 3. ábra szemlélteti.
 
-```{r fig.cap = "Kointegrációs tesztek eredményei"}
+```{r fig.cap = "Kointegrációs tesztek eredményei", fig.height=8}
 df <- NeighbourCountry %>%
   mutate(x = names(NeighbourCountry)) %>%
   pivot_longer(-x, names_to = "y", values_to = "neighbour") %>%
@@ -86,7 +87,7 @@ for (i in 1:nrow(df)) {
       na.exclude() %>%
       lm(formula = y ~ x) %>%
       .$residuals
-
+    
     if (ndiffs(res, test = "kpss", type = "level", alpha = .05) < df$dx[i]) {
       v[i] <- "Kointegráltak"
     } else {
@@ -100,10 +101,10 @@ for (i in 1:nrow(df)) {
 df$coint <- v
 
 df <- merge(df, oecd_fertility %>%
-  pivot_wider(names_from = "location", values_from = "tfr") %>%
-  dplyr::select(-1) %>% cor(use = "pairwise.complete.obs") %>%
-  data.frame() %>% rownames_to_column(var = "x") %>%
-  pivot_longer(-1, names_to = "y", values_to = "cor"))
+              pivot_wider(names_from = "location", values_from = "tfr") %>%
+              dplyr::select(-1) %>% cor(use = "pairwise.complete.obs") %>%
+              data.frame() %>% rownames_to_column(var = "x") %>%
+              pivot_longer(-1, names_to = "y", values_to = "cor"))
 
 ggplot(data = df) +
   geom_tile(aes(x = x, y = y, fill = coint), color = "black") +
@@ -124,16 +125,17 @@ nodes <- CountryData %>%
 
 ggplot(nodes) +
   geom_polygon(aes(x = long, y = lat, group = group),
-    data = map_data("world"),
-    fill = "#CECECE", color = "black",
-    size = 0.15
+               data = map_data("world"),
+               fill = "#CECECE", color = "black",
+               size = 0.15
   ) +
   geom_curve(aes(
     x = x, y = y, xend = xend, yend = yend,
     color = "Szomszédosnak tekintettek"
   ),
   size = 1.2,
-  data = NeighbourCountry %>% mutate(x = names(NeighbourCountry)) %>%
+  data = NeighbourCountry %>% 
+    mutate(x = names(NeighbourCountry)) %>%
     pivot_longer(-x, names_to = "y") %>%
     na.exclude() %>% dplyr::select(-value) %>%
     merge(nodes, by.x = "x", by.y = "name") %>%
@@ -144,8 +146,8 @@ ggplot(nodes) +
   alpha = 0.7
   ) +
   geom_text(aes(x = lon, y = lat, label = name),
-    hjust = 0.7, nudge_x = 0, nudge_y = 0,
-    size = 2, color = "black", fontface = "bold"
+            hjust = 0.7, nudge_x = 0, nudge_y = 0,
+            size = 2, color = "black", fontface = "bold"
   ) +
   labs(color = "") +
   coord_fixed(xlim = c(-150, 180), ylim = c(-55, 80)) +
@@ -162,12 +164,15 @@ df %>%
   summarise(n = n()) %>%
   filter(!is.na(neighbour)) %>%
   pivot_wider(names_from = neighbour, values_from = n) %>%
-  mutate_at(-1, function(x) scales::percent(x / sum(x), decimal.mark = ",")) %>%
+  mutate_at(-1, function(x) scales::percent(x / sum(x),
+                                            decimal.mark = ",")) %>%
   .[c(1, 3, 2), ] %>%
   knitr::kable(
-    col.names = c("", "Határosak", "Nem határosak"), align = c("l", "c", "c"),
+    col.names = c("", "Határosak", "Nem határosak"),
+    align = c("l", "c", "c"),
     caption =
-      "Tesztek eredményeinek arányai egymással határos és nem határos országok esetében"
+      "Tesztek eredményeinek arányai egymással
+         határos és nem határos országok esetében"
   )
 ```
 

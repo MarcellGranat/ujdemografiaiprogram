@@ -2,8 +2,8 @@
 
 ```{css, echo=FALSE}
 p {
-text-align: justify;
-  }
+  text-align: justify;
+}
 ```
 
 ## Elméleti megfontolás
@@ -27,15 +27,16 @@ Felhasználva mind a munkanélküliségi rátát, mind az egy főre eső bruttó
 
 
 ```{r}
-irf_plot <- function(model, n.ahead = 10, ci = .95, plot_filter = NULL, n.col = NULL) {
+irf_plot <- function(model, n.ahead = 10, ci = .95,
+                     plot_filter = NULL, n.col = NULL) {
   irf <- model %>%
     vars::irf(n.ahead = n.ahead, ci = ci)
-
+  
   point <- irf %>%
     .$irf %>%
     do.call(what = rbind) %>%
     data.frame()
-
+  
   point <- point %>%
     mutate(
       shock = rep(names(point), each = nrow(point) / length(point)),
@@ -47,12 +48,12 @@ irf_plot <- function(model, n.ahead = 10, ci = .95, plot_filter = NULL, n.col = 
       variable = str_c(shock, " › ", name),
       point = value
     )
-
+  
   lower <- irf %>%
     .$Lower %>%
     do.call(what = rbind) %>%
     data.frame()
-
+  
   lower <- lower %>%
     mutate(
       shock = rep(names(lower), each = nrow(lower) / length(lower)),
@@ -64,12 +65,12 @@ irf_plot <- function(model, n.ahead = 10, ci = .95, plot_filter = NULL, n.col = 
       variable = str_c(shock, " › ", name),
       lower = value
     )
-
+  
   upper <- irf %>%
     .$Upper %>%
     do.call(what = rbind) %>%
     data.frame()
-
+  
   upper <- upper %>%
     mutate(
       shock = rep(names(upper), each = nrow(upper) / length(upper)),
@@ -81,19 +82,19 @@ irf_plot <- function(model, n.ahead = 10, ci = .95, plot_filter = NULL, n.col = 
       variable = str_c(shock, " › ", name),
       upper = value
     )
-
+  
   df <- merge(point, lower, by = c("t", "variable")) %>%
     merge(upper, by = c("t", "variable")) %>%
     arrange(variable)
-
+  
   if (!is.null(plot_filter)) {
     df <- df %>% filter(variable %in% unique(variable)[plot_filter])
   }
-
+  
   if (is.null(n.col)) {
     n.col <- (n_distinct(df$variable)^0.5 %/% 1)
   }
-
+  
   df %>% ggplot() +
     geom_hline(yintercept = 0, linetype = "dotted", size = 1) +
     geom_ribbon(aes(min = lower, max = upper, x = t, fill = paste(scales::percent(ci), "konfidencia intervallum")), alpha = .2) +
@@ -101,13 +102,9 @@ irf_plot <- function(model, n.ahead = 10, ci = .95, plot_filter = NULL, n.col = 
     facet_wrap(vars(variable), scales = "free", ncol = n.col) +
     scale_color_manual(values = c("irf" = "black")) +
     scale_fill_manual(values = "grey50") +
-    scale_x_continuous(breaks = 0:n.ahead, labels = 0:n.ahead, expand = c(0, 0)) +
-    labs(
-      x = "", y = "", fill = NULL, color = NULL
-    ) +
-    theme(
-      legend.position = "bottom"
-    )
+    scale_x_continuous(breaks = 0:n.ahead, labels = 0:n.ahead,
+                       expand = c(0, 0)) +
+    labs(x = "", y = "", fill = NULL, color = NULL)
 }
 ```
 
@@ -142,7 +139,7 @@ model %>% irf_plot(plot_filter = c(1, 2), n.col = 1, n.ahead = 7)
 
 A varianciadekompozíció alapján (5) a GDP/fő idősora 5%-ban magyarázza az egy évvel későbbi, 8,5%-ban a két évvel későbbi és 10%-ban a még későbbi értékeit a TTA magyarázott varianciájának. A fennmaradó rész a TTA jelen, illetve egy évvel korábbi értékeihez tartozik.
 
-```{r}
+```{r eval = F}
 model %>%
   vars::fevd() %>%
   .$TTA
@@ -196,8 +193,10 @@ model %>%
   ), levels = c("Munkanélküliség", "GDP/fő", "TTA"))) %>%
   ggplot() +
   geom_area(aes(x = t, y = value, fill = variable), color = "black") +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1), expand = c(0, 0)) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1),
+                     expand = c(0, 0)) +
   scale_fill_grey() +
-  scale_x_continuous(labels = 0:5, breaks = 0:5, expand = c(0, 0), limits = c(0, 5)) +
+  scale_x_continuous(labels = 0:5, breaks = 0:5, expand = c(0, 0),
+                     limits = c(0, 5)) +
   labs(x = "Év", y = "TTA varianciájának magyarázata", fill = NULL)
 ```

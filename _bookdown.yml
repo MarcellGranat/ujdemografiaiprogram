@@ -5,7 +5,7 @@ language:
   label:
     fig: "Ábra "
     tab: "Táblázat "
-edit: https://github.com/MarcellGranat/ujdemografiaiprogram/master/%s
+edit: https://github.com/MarcellGranat/ujdemografiaiprogram/blob/main/%s
 output_dir: "docs"
 sharing:
   github: yes

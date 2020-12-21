@@ -180,8 +180,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <h1><span class="header-section-number">3</span> A magyar születésszám az elmúlt 60 évben</h1>
 <style type="text/css">
 p {
-text-align: justify;
-  }
+  text-align: justify;
+}
 </style>
 <p>Ahhoz, hogy a születendő gyermekek számának alakulásában lezajló trendek mögötti okozati kapcsolatokat értelmezni tudjuk elengedhetetlen a születésszámmal kapcsolatos indikátorok fogalmainak tisztázása, és mind az erről szóló viták, mind a modellezéssel kapcsolatosan az egyik legkritikusabb pont a megfelelő mutató kiválasztása. Ennek elvégzéséhez ezen szakaszban szeretném az általánosan ismert mutatókat röviden bemutatni. A Központi Statisztikai Hivatal honlapján is elérhető a téma három legelemibb mutatója: a született gyermekek száma összesen, az ezer főre jutó gyermekek száma, illetőlegesen a teljes termékenységi arányszám.
 Az előbbi felsorolás sorrendjében haladva, ezen indikátorok egyre érzéketlenebbek az ország népességének meglévő helyzetével kapcsolatosan. Az összes gyermekszületésének számossága teljes mértékben összefügg az adott évben, adott országban élő nők számával, ily módon már csak attól is képes változni az értéke, hogy az ország populációjának mértéke megváltozik. Azaz, ha az anyákat jellemző gyermekvállalási hajlamban nem is történik változás, pusztán az országban élő nők száma növekszik vagy csökken, akkor is megváltozik az értéke. Az ezer főre jutó születésszám az imént említett eseményre érzéketlen. Azonban nem szűrődik ki belőle a populáció összetételében zajló elváltozás. Ez leggyakrabban a populáció elöregedésében érhető tetten a fejlett országokban, mivel a népesség száma nem egyenlő mértékben változik a szülőképes korú nőkkel. Szélsőséges esetben azonban történhet ez akár a nemek arányainak felborulásán keresztül is, ahogy történik ez a mai Kínában a szelektív abortusz eredményeként.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>
@@ -195,19 +195,21 @@ Annak megválaszolásához, hogy mekkora eltéréshez vezet az eltérő mutatók
 <a class="sourceLine" id="cb1-6" title="6">      name <span class="op">==</span><span class="st"> &quot;LiveBirthTotal&quot;</span> <span class="op">~</span><span class="st"> &quot;Születésszám&quot;</span>,</a>
 <a class="sourceLine" id="cb1-7" title="7">      name <span class="op">==</span><span class="st"> &quot;LiveBirthTo1000&quot;</span> <span class="op">~</span><span class="st"> &quot;Ezer főre eső születésszám&quot;</span>,</a>
 <a class="sourceLine" id="cb1-8" title="8">      T <span class="op">~</span><span class="st"> &quot;Teljes termékenységi arányszám&quot;</span></a>
-<a class="sourceLine" id="cb1-9" title="9">    ), <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;Teljes termékenységi arányszám&quot;</span>, <span class="st">&quot;Ezer főre eső születésszám&quot;</span>, <span class="st">&quot;Születésszám&quot;</span>))</a>
-<a class="sourceLine" id="cb1-10" title="10">  ) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb1-11" title="11"><span class="st">  </span><span class="kw">ggplot</span>() <span class="op">+</span></a>
-<a class="sourceLine" id="cb1-12" title="12"><span class="st">  </span><span class="kw">geom_hline</span>(<span class="kw">aes</span>(</a>
-<a class="sourceLine" id="cb1-13" title="13">    <span class="dt">yintercept =</span> <span class="fl">2.1</span> <span class="op">/</span><span class="st"> </span>LiveBirthAndFertility<span class="op">$</span>TotalFertility[<span class="dv">1</span>],</a>
-<a class="sourceLine" id="cb1-14" title="14">    <span class="dt">linetype =</span> <span class="st">&quot;Reprodukciót biztosító TTA érték&quot;</span></a>
-<a class="sourceLine" id="cb1-15" title="15">  ), <span class="dt">color =</span> <span class="st">&quot;black&quot;</span>, <span class="dt">size =</span> <span class="dv">1</span>) <span class="op">+</span></a>
-<a class="sourceLine" id="cb1-16" title="16"><span class="st">  </span><span class="kw">geom_line</span>(<span class="kw">aes</span>(<span class="dt">x =</span> Year, <span class="dt">y =</span> value, <span class="dt">color =</span> name), <span class="dt">size =</span> <span class="dv">2</span>) <span class="op">+</span></a>
-<a class="sourceLine" id="cb1-17" title="17"><span class="st">  </span><span class="kw">scale_color_grey</span>() <span class="op">+</span></a>
-<a class="sourceLine" id="cb1-18" title="18"><span class="st">  </span><span class="kw">scale_linetype_manual</span>(<span class="dt">values =</span> <span class="kw">c</span>(<span class="st">&quot;Reprodukciót biztosító TTA érték&quot;</span> =<span class="st"> &quot;dotted&quot;</span>)) <span class="op">+</span></a>
-<a class="sourceLine" id="cb1-19" title="19"><span class="st">  </span><span class="kw">scale_x_continuous</span>(<span class="dt">expand =</span> <span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">0</span>)) <span class="op">+</span></a>
-<a class="sourceLine" id="cb1-20" title="20"><span class="st">  </span><span class="kw">scale_y_continuous</span>(<span class="dt">labels =</span> scales<span class="op">::</span>percent) <span class="op">+</span></a>
-<a class="sourceLine" id="cb1-21" title="21"><span class="st">  </span><span class="kw">labs</span>(<span class="dt">x =</span> <span class="st">&quot;Év&quot;</span>, <span class="dt">y =</span> <span class="st">&quot;Százalék (1960 = 100%)&quot;</span>, <span class="dt">color =</span> <span class="ot">NULL</span>, <span class="dt">linetype =</span> <span class="ot">NULL</span>, <span class="dt">title =</span> <span class="st">&quot;Születési mutatók bázisindexe (1960=100%)&quot;</span>) </a></code></pre></div>
+<a class="sourceLine" id="cb1-9" title="9">    ), <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;Teljes termékenységi arányszám&quot;</span>, <span class="st">&quot;Ezer főre eső születésszám&quot;</span>,</a>
+<a class="sourceLine" id="cb1-10" title="10">                  <span class="st">&quot;Születésszám&quot;</span>))</a>
+<a class="sourceLine" id="cb1-11" title="11">  ) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb1-12" title="12"><span class="st">  </span><span class="kw">ggplot</span>() <span class="op">+</span></a>
+<a class="sourceLine" id="cb1-13" title="13"><span class="st">  </span><span class="kw">geom_hline</span>(<span class="kw">aes</span>(</a>
+<a class="sourceLine" id="cb1-14" title="14">    <span class="dt">yintercept =</span> <span class="fl">2.1</span> <span class="op">/</span><span class="st"> </span>LiveBirthAndFertility<span class="op">$</span>TotalFertility[<span class="dv">1</span>],</a>
+<a class="sourceLine" id="cb1-15" title="15">    <span class="dt">linetype =</span> <span class="st">&quot;Reprodukciót biztosító TTA érték&quot;</span></a>
+<a class="sourceLine" id="cb1-16" title="16">  ), <span class="dt">color =</span> <span class="st">&quot;black&quot;</span>, <span class="dt">size =</span> <span class="dv">1</span>) <span class="op">+</span></a>
+<a class="sourceLine" id="cb1-17" title="17"><span class="st">  </span><span class="kw">geom_line</span>(<span class="kw">aes</span>(<span class="dt">x =</span> Year, <span class="dt">y =</span> value, <span class="dt">color =</span> name), <span class="dt">size =</span> <span class="dv">2</span>) <span class="op">+</span></a>
+<a class="sourceLine" id="cb1-18" title="18"><span class="st">  </span><span class="kw">scale_color_grey</span>() <span class="op">+</span></a>
+<a class="sourceLine" id="cb1-19" title="19"><span class="st">  </span><span class="kw">scale_linetype_manual</span>(<span class="dt">values =</span> </a>
+<a class="sourceLine" id="cb1-20" title="20">                      <span class="kw">c</span>(<span class="st">&quot;Reprodukciót biztosító TTA érték&quot;</span> =<span class="st"> &quot;dotted&quot;</span>)) <span class="op">+</span></a>
+<a class="sourceLine" id="cb1-21" title="21"><span class="st">  </span><span class="kw">scale_x_continuous</span>(<span class="dt">expand =</span> <span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">0</span>)) <span class="op">+</span></a>
+<a class="sourceLine" id="cb1-22" title="22"><span class="st">  </span><span class="kw">scale_y_continuous</span>(<span class="dt">labels =</span> scales<span class="op">::</span>percent) <span class="op">+</span></a>
+<a class="sourceLine" id="cb1-23" title="23"><span class="st">  </span><span class="kw">labs</span>(<span class="dt">x =</span> <span class="st">&quot;Év&quot;</span>, <span class="dt">y =</span> <span class="st">&quot;Százalék (1960 = 100%)&quot;</span>, <span class="dt">color =</span> <span class="ot">NULL</span>, <span class="dt">linetype =</span> <span class="ot">NULL</span>, <span class="dt">title =</span> <span class="st">&quot;Születési mutatók bázisindexe (1960=100%)&quot;</span>) </a></code></pre></div>
 <div class="figure"><span id="fig:unnamed-chunk-4"></span>
 <img src="my-book_files/figure-html/unnamed-chunk-4-1.png" alt="Születési mutatók bázisindexe (1960=100%)" width="672" />
 <p class="caption">
@@ -262,7 +264,7 @@ gitbook.start({
 "size": 2
 },
 "edit": {
-"link": "https://github.com/MarcellGranat/ujdemografiaiprogram/master/Chapter-2.Rmd",
+"link": "https://github.com/MarcellGranat/ujdemografiaiprogram/blob/main/Chapter-2.Rmd",
 "text": "Jump to GitHub"
 },
 "history": {

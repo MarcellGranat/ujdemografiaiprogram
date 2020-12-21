@@ -2,8 +2,8 @@
 
 ```{css, echo=FALSE}
 p {
-text-align: justify;
-  }
+  text-align: justify;
+}
 ```
 
 Ahhoz, hogy a születendő gyermekek számának alakulásában lezajló trendek mögötti okozati kapcsolatokat értelmezni tudjuk elengedhetetlen a születésszámmal kapcsolatos indikátorok fogalmainak tisztázása, és mind az erről szóló viták, mind a modellezéssel kapcsolatosan az egyik legkritikusabb pont a megfelelő mutató kiválasztása. Ennek elvégzéséhez ezen szakaszban szeretném az általánosan ismert mutatókat röviden bemutatni. A Központi Statisztikai Hivatal honlapján is elérhető a téma három legelemibb mutatója: a született gyermekek száma összesen, az ezer főre jutó gyermekek száma, illetőlegesen a teljes termékenységi arányszám.
@@ -20,7 +20,8 @@ LiveBirthAndFertility %>%
       name == "LiveBirthTotal" ~ "Születésszám",
       name == "LiveBirthTo1000" ~ "Ezer főre eső születésszám",
       T ~ "Teljes termékenységi arányszám"
-    ), levels = c("Teljes termékenységi arányszám", "Ezer főre eső születésszám", "Születésszám"))
+    ), levels = c("Teljes termékenységi arányszám", "Ezer főre eső születésszám",
+                  "Születésszám"))
   ) %>%
   ggplot() +
   geom_hline(aes(
@@ -29,7 +30,8 @@ LiveBirthAndFertility %>%
   ), color = "black", size = 1) +
   geom_line(aes(x = Year, y = value, color = name), size = 2) +
   scale_color_grey() +
-  scale_linetype_manual(values = c("Reprodukciót biztosító TTA érték" = "dotted")) +
+  scale_linetype_manual(values = 
+                      c("Reprodukciót biztosító TTA érték" = "dotted")) +
   scale_x_continuous(expand = c(0, 0)) +
   scale_y_continuous(labels = scales::percent) +
   labs(x = "Év", y = "Százalék (1960 = 100%)", color = NULL, linetype = NULL, title = "Születési mutatók bázisindexe (1960=100%)") 

@@ -2,8 +2,8 @@
 
 ```{css, echo=FALSE}
 p {
-text-align: justify;
-  }
+  text-align: justify;
+}
 ```
 
 ## Elméleti megfontolás
@@ -43,41 +43,48 @@ c.panel.extended <- c.panel %>%
 
 terms <- list(
   c("GDPcap", "unr"),
-  c(
-    "GDPcap", "unr", "unr2", "GDPcap2", "unr_l", "unr_l2", "GDPcap_l",
-    "GDPcap_l2", "unr_ll", "unr_ll2", "GDPcap_ll", "GDPcap_ll2", "unr_lll", "unr_lll2",
-    "GDPcap_lll", "GDPcap_lll2"
-  ),
-  c(
-    "GDPcap", "GDPcap2", "GDPcap_l",
-    "GDPcap_l2", "GDPcap_ll", "GDPcap_ll2"
-  ),
+  c("GDPcap", "unr", "unr2", "GDPcap2", "unr_l", "unr_l2", "GDPcap_l",
+    "GDPcap_l2", "unr_ll", "unr_ll2", "GDPcap_ll", "GDPcap_ll2", "unr_lll",  
+    "unr_lll2", "GDPcap_lll", "GDPcap_lll2"),
+  c("GDPcap", "GDPcap2", "GDPcap_l", "GDPcap_l2", "GDPcap_ll", "GDPcap_ll2"),
   c("GDPcap_l", "GDPcap_l2", "GDPcap_ll")
 )
 panel.tbl <- data.frame(term = c(names(c.panel.extended)[-c(1, 2, 3)], "Chow-teszt", "Hausman-teszt", "Korrigált R^2"))
 
 for (i in 1:length(terms)) {
-  formula <- as.expression(paste("formula = tfr ~", paste(terms[[i]], collapse = " + ")))
+  formula <- as.expression(paste("formula = tfr ~", paste(terms[[i]],
+                                                      collapse = " + ")))
 
-  c.panel.pooling.extended <- plm(eval(formula), data = c.panel.extended, model = "pooling")
-  c.panel.within.extended <- plm(eval(formula), data = c.panel.extended, model = "within")
-  c.panel.random.extended <- plm(eval(formula), data = c.panel.extended, model = "random")
+  c.panel.pooling.extended <- plm(eval(formula), 
+                                  data = c.panel.extended, model = "pooling")
+  c.panel.within.extended <- plm(eval(formula),
+                                 data = c.panel.extended, model = "within")
+  c.panel.random.extended <- plm(eval(formula),
+                                 data = c.panel.extended, model = "random")
 
-  panel.tbl <- panel.tbl %>% merge(c.panel.within.extended %>% broom::tidy() %>% transmute(
-    term,
-    estimate = paste0(as.character(format(estimate, digits = 3, nsmall = 3, decimal.mark = ",")), case_when(
-      p.value < .01 ~ "***",
-      p.value < .05 ~ "**",
-      p.value < .1 ~ "*",
-      T ~ ""
-    ))
-  ) %>% rbind(
-    data.frame(
-      term = c("Chow-teszt", "Hausman-teszt", "Korrigált R^2"),
-      estimate = c(
-        pooltest(c.panel.pooling.extended, c.panel.within.extended)$p.value %>% scales::percent(accuracy = .01, decimal.mark = ","),
-        phtest(c.panel.within.extended, c.panel.random.extended)$p.value %>% scales::percent(accuracy = .01, decimal.mark = ","),
-        c.panel.within.extended %>% plm::r.squared(dfcor = T) %>% scales::percent(accuracy = .01, decimal.mark = ",")
+  panel.tbl <- panel.tbl %>%
+    merge(c.panel.within.extended %>%
+            broom::tidy() %>% 
+            transmute(
+              term,
+              estimate = paste0(as.character(format(
+                estimate, digits = 3, nsmall = 3, decimal.mark = ",")),
+                case_when(
+                  p.value < .01 ~ "***",
+                  p.value < .05 ~ "**",
+                  p.value < .1 ~ "*",
+                  T ~ ""
+                  ))
+              ) %>% rbind(
+                data.frame(
+                  term = c("Chow-teszt", "Hausman-teszt", "Korrigált R^2"),
+                           estimate = c(
+        pooltest(c.panel.pooling.extended, c.panel.within.extended)$p.value %>%
+          scales::percent(accuracy = .01, decimal.mark = ","),
+        phtest(c.panel.within.extended, c.panel.random.extended)$p.value %>%
+          scales::percent(accuracy = .01, decimal.mark = ","),
+        c.panel.within.extended %>% plm::r.squared(dfcor = T) %>%
+          scales::percent(accuracy = .01, decimal.mark = ",")
       )
     )
   ) %>% set_names(c("term", i)),
@@ -87,7 +94,8 @@ for (i in 1:length(terms)) {
 
 panel.tbl %>%
   setNames(c("variable", as.roman(1:(ncol(.) - 1)))) %>%
-  mutate(variable = factor(variable, levels = c(names(c.panel.extended), "Chow-teszt", "Hausman-teszt", "Korrigált R^2"))) %>%
+  mutate(variable = factor(variable, levels = c(names(c.panel.extended),
+                      "Chow-teszt", "Hausman-teszt", "Korrigált R^2"))) %>%
   arrange(variable) %>%
   mutate(
     variable = as.character(variable),
@@ -102,7 +110,8 @@ panel.tbl %>%
   mutate_all(function(x) ifelse(is.na(x), "", x)) %>%
   knitr::kable(
     col.names = c("változó", "I.", "II.", "III.", "IV."),
-    align = c("l", rep("c", ncol(.) - 1)), caption = "Becsült longitudinális modellek a TTA-ra"
+    align = c("l", rep("c", ncol(.) - 1)),
+    caption = "Becsült longitudinális modellek a TTA-ra"
   )
 ```
 
@@ -110,17 +119,14 @@ panel.tbl %>%
 *A paraméterek mindegyik esetben a fixhatású-modell paramétereit mutatják. A GDP/fő ezer Forintban, míg a munkanélküliségi ráta százalékban került a modellbe.*
 
 ```{r}
-# Hungarian map draw function 
-hun_map_plot <- function(df, na.value = "white", low = "white", high = "black") {
+# Hungarian map draw function
+hun_map_plot <- function(df, na.value = "white", low = "white", high = "black"){
   hunsf %>%
     merge(set_names(df, c("NAME", "value"))) %>%
     ggplot() +
     geom_sf(aes(fill = value)) +
     ggthemes::theme_map() +
-    scale_fill_gradient(
-      na.value = na.value, low = low, high = high,
-      guide = guide_colorbar(frame.colour = "black", ticks.colour = "black")
-    )
+    scale_fill_viridis_c()
 }
 ```
 
@@ -131,7 +137,8 @@ c.panel.within.extended %>%
   plm::fixef() %>%
   data.frame() %>%
   rownames_to_column() %>%
-  hun_map_plot() + labs(fill = "TTA") + theme(legend.position = "right")
+  hun_map_plot() + labs(fill = "TTA") +
+  theme(legend.position = "right")
 ```
 
 ## Eredmények értelmezése, következtetések levonása
@@ -143,7 +150,8 @@ c.panel.within.extended %>%
   broom::augment() %>%
   dplyr::select(.rownames, .fitted) %>%
   merge(c.panel %>% mutate(".rownames" = seq(nrow(c.panel)))) %>%
-  transmute(Becsült = .fitted, Valós = tfr, county = str_remove_all(county, paste(c(" megye", "-Csanád"), collapse = "|")), year = year) %>%
+  transmute(Becsült = .fitted, Valós = tfr, county = str_remove_all(county,
+      paste(c(" megye", "-Csanád"), collapse = "|")), year = year) %>%
   pivot_longer(1:2) %>%
   ggplot(aes(x = as.numeric(year), y = value, color = name)) +
   geom_line(size = 1.2) +
@@ -159,13 +167,20 @@ Miután a 2. késleltetés is szignifikáns, negatív előjellel, így arra a k�
 
 ```{r fig.cap = "A GDP/fő hatása a TTA-ra a IV. panel modell alapján"}
 ggplot(data.frame(x = c(0, 10000)), aes(x = x)) +
-  stat_function(fun = function(x) x * c.panel.within.extended$coefficients["GDPcap_l"] + x^2 * c.panel.within.extended$coefficients["GDPcap_l2"], size = 2) +
-  geom_vline(xintercept = c.panel %>% filter(year == 2018) %>% pull(GDPcap) %>% .[-1], linetype = "dashed") +
-  geom_vline(aes(linetype = "Magyar megyék egy főre eső GDP értékei", xintercept = (c.panel %>% filter(year == 2018) %>% pull(GDPcap) %>% .[1]))) +
+  stat_function(fun = function(x)
+    x*c.panel.within.extended$coefficients["GDPcap_l"] +
+    x^2 * c.panel.within.extended$coefficients["GDPcap_l2"], size = 2) +
+  geom_vline(xintercept = c.panel %>%
+               filter(year == 2018) %>%
+               pull(GDPcap) %>%
+               .[-1], linetype = "dashed") +
+  geom_vline(aes(linetype = "Magyar megyék egy főre eső GDP értékei",
+                 xintercept = (c.panel %>% filter(year == 2018) %>%
+                                 pull(GDPcap) %>% .[1]))) +
   scale_linetype_manual(values = "dashed") +
   scale_x_continuous(expand = c(0, 0)) +
   scale_y_continuous(expand = c(0, 0), limits = c(0, 2)) +
-  labs(x = "GDP/fő (ezer Ft-ban) (l = 1)", y = "Egyedi konstanson felüli TTA érték", linetype = NULL) +
+  labs(x = "GDP/fő (ezer Ft-ban) (l = 1)",
+       y = "Egyedi konstanson felüli TTA érték", linetype = NULL) +
   theme(plot.margin = unit(c(1, 1, 1, 1), "cm"))
 ```
-

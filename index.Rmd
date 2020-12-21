@@ -9,7 +9,7 @@ favicon: "logo.ico"
 # Absztrakt {#index}
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = T, comment = "", warning = F, message = F, cache = T)
+knitr::opts_chunk$set(echo = T, comment = "", warning = F, message = F, cache = F)
 library(tidyverse)
 library(ggpubr)
 library(tseries)
@@ -29,6 +29,8 @@ repmis::source_data("https://raw.githubusercontent.com/MarcellGranat/ujdemografi
 
 Kézirat lezárásának dátuma: 2020. november 1.\
 A tanulmány a 2020-as az Új jövőkép MNB Tanulmányi Verseny *Új Demográfiai Program* szekciójába készült, melyben Kiváló pályamű díjat nyert.
+
+A kézirat tartalmához fűzödő tudományos diszkusszió támogatása érdekében egy párbeszéd ablak került megnyitásra az anyagokat tartalmazó GitHub repository oldalán: https://github.com/MarcellGranat/ujdemografiaiprogram/discussions
 
 ***
 
