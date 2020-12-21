@@ -49,7 +49,8 @@ terms <- list(
   c("GDPcap", "GDPcap2", "GDPcap_l", "GDPcap_l2", "GDPcap_ll", "GDPcap_ll2"),
   c("GDPcap_l", "GDPcap_l2", "GDPcap_ll")
 )
-panel.tbl <- data.frame(term = c(names(c.panel.extended)[-c(1, 2, 3)], "Chow-teszt", "Hausman-teszt", "Korrigált R^2"))
+panel.tbl <- data.frame(term = c(names(c.panel.extended)[-c(1, 2, 3)],
+                          "Chow-teszt", "Hausman-teszt", "Korrigált R^2"))
 
 for (i in 1:length(terms)) {
   formula <- as.expression(paste("formula = tfr ~", paste(terms[[i]],
@@ -106,8 +107,7 @@ panel.tbl %>%
     variable = str_replace(variable, "_lll", " (l=3)"),
     variable = str_replace(variable, "_ll", " (l=2)"),
     variable = str_replace(variable, "_l", " (l=1)")
-  ) %>%
-  mutate_all(function(x) ifelse(is.na(x), "", x)) %>%
+  ) %>% mutate_all(function(x) ifelse(is.na(x), "", x)) %>%
   knitr::kable(
     col.names = c("változó", "I.", "II.", "III.", "IV."),
     align = c("l", rep("c", ncol(.) - 1)),
@@ -126,7 +126,8 @@ hun_map_plot <- function(df, na.value = "white", low = "white", high = "black"){
     ggplot() +
     geom_sf(aes(fill = value)) +
     ggthemes::theme_map() +
-    scale_fill_viridis_c()
+    scale_fill_viridis_c(guide = guide_colorbar(ticks.colour = 'black',
+                                                frame.colour = 'black'))
 }
 ```
 

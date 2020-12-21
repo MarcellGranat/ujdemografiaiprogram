@@ -1,6 +1,6 @@
 bookdown::gitbook:
+  number_sections: false
   config:
-    number_sections: no
     toc:
       collapse: section
       before: |

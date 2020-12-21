@@ -97,7 +97,8 @@ irf_plot <- function(model, n.ahead = 10, ci = .95,
   
   df %>% ggplot() +
     geom_hline(yintercept = 0, linetype = "dotted", size = 1) +
-    geom_ribbon(aes(min = lower, max = upper, x = t, fill = paste(scales::percent(ci), "konfidencia intervallum")), alpha = .2) +
+    geom_ribbon(aes(min = lower, max = upper, x = t,
+     fill = paste(scales::percent(ci), "konfidencia intervallum")), alpha = .2) +
     geom_line(aes(x = t, y = point, color = "irf"), size = 1.2) +
     facet_wrap(vars(variable), scales = "free", ncol = n.col) +
     scale_color_manual(values = c("irf" = "black")) +

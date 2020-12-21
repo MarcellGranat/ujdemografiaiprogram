@@ -34,7 +34,8 @@ LiveBirthAndFertility %>%
                       c("Reprodukciót biztosító TTA érték" = "dotted")) +
   scale_x_continuous(expand = c(0, 0)) +
   scale_y_continuous(labels = scales::percent) +
-  labs(x = "Év", y = "Százalék (1960 = 100%)", color = NULL, linetype = NULL, title = "Születési mutatók bázisindexe (1960=100%)") 
+  labs(x = "Év", y = "Százalék (1960 = 100%)", color = NULL,
+       linetype = NULL, title = "Születési mutatók bázisindexe (1960=100%)") 
 ```
 
 Egy olyan hipotetikus esetben, amelyben az ország népességége és korfájának összetétele állandó, pusztán a gyermekvállalási hajlandóságban történik változás, azt várhatjuk, hogy a három mutató egymáshoz viszonyított aránya állandó marad. Az 1. ábráról jól kivehető, hogy a három tárgyalt mutató bázisindexe (1960-as évekhez hasonlított mértéke) alapvetően az 1970-es évek közepén érte el az egymástól vett eltérés maximumát. Az eltérés kialakulásának oka az 1980-as évek elejéig tapasztalható népességszám növekedés. Az 1970-es évek közepén a hirtelen termékenység növekedésnek hátterében az abortuszengedélyezési eljárás szigorítása, illetőleg a gyes bevezetése állt (Spéder 2019), azonban a 20 évvel korábban a Ratkó-korszakban született nők gyermekvállalási korba lépése a másik két mutató emelkedését felerősítette, míg a TTA mentes a legutóbbi hatásától (KSH, 2018).
