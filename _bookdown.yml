@@ -5,11 +5,12 @@ language:
   label:
     fig: "Ábra "
     tab: "Táblázat "
-edit: https://github.com/MarcellGranat/ujdemografiaiprogram/%s
+edit: https://github.com/MarcellGranat/ujdemografiaiprogram/master/%s
 output_dir: "docs"
 sharing:
   github: yes
   facebook: yes
   twitter: yes
   all: no
-rmd_files: ["index.Rmd", "Chapter-1.Rmd", "Chapter-2.Rmd"]
+rmd_files: ["index.Rmd", "Chapter-1.Rmd", "Chapter-2.Rmd", "Chapter-3.Rmd", "Chapter-4.Rmd", "Chapter-5.Rmd"
+, "Chapter-6.Rmd", "Chapter-7.Rmd", "Chapter-8.Rmd"]

@@ -435,6 +435,7 @@ for (i in 1:length(terms)) {
   all = T
   )
 }
+
 panel.tbl %>%
   setNames(c("variable", as.roman(1:(ncol(.) - 1)))) %>%
   mutate(variable = factor(variable, levels = c(names(c.panel.extended), "Chow-teszt", "Hausman-teszt", "Korrigált R^2"))) %>%
